@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "prison-book-project"
+version = "0.1.0"
+description = ""
+authors = ["ges-na <gesinaface@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+django-environ = "^0.8.1"
+Django = "^4.0.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
