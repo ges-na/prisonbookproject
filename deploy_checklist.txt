@@ -1,3 +1,8 @@
 collectstatic disabled on heroku:
 heroku config:set DISABLE_COLLECTSTATIC=1
 turn back on!
+
+set a better SECRET_KEY env var on heroku
+
+ALLOWED_HOSTS env var includes *
+limit allowed hosts properly
