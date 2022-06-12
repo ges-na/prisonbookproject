@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from django.contrib import admin
 from django.db.models import F
@@ -25,6 +26,23 @@ class PersonResource(resources.ModelResource):
         fields = ('id', 'inmate_number', 'last_name', 'first_name',
                 'last_sent', 'package_count', 'pending_letter', 'eligibility',)
 
+    def after_import(self, dataset, result, using_transactions, dry_run, **kwargs):
+        row_data = json.loads(dataset.get_json())
+        for row in row_data:
+            person_id = row["id"]
+            legacy_prison_id = row["prison"]
+            prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
+            if not prison:
+                raise Exception(f"Prison with legacy id {legacy_prison_id} not found!")
+            existing = PersonPrison.objects.filter(person_id=person_id, prison_id=prison.id).first()
+            if existing and existing.current:
+                continue
+            elif existing:
+                existing.current = True
+                PersonPrison.objects.filter(person_id=person_id).update(current=False)
+                existing.save()
+                continue
+            PersonPrison.objects.create(person_id=person_id, prison_id=prison.id, current=True)
 
 class PersonPrisonForm(ModelForm):
 
@@ -42,7 +60,7 @@ class PersonPrisonInline(admin.TabularInline):
     form = PersonPrisonForm
 
 @admin.register(Person)
-class PersonAdmin(VersionAdmin, ImportExportModelAdmin):
+class PersonAdmin(ImportExportModelAdmin, VersionAdmin):
     resource_class = PersonResource
 
     list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'last_sent', 'package_count', 'pending_letter', 'eligibility', 'current_prison', 'created_by', 'created_date', 'modified_by', 'modified_date',)
@@ -67,3 +85,9 @@ class PrisonAdmin(VersionAdmin):
 @admin.register(Letter)
 class LetterAdmin(VersionAdmin):
     pass
+
+
+# class PrisonField(Field):
+#     def save(self, obj, data, **kwargs):
+#         kwargs.pop('is_m2m', None)
+#         cleaned = self.clean(data, **kwargs)

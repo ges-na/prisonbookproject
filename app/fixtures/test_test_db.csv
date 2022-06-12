@@ -1,0 +1,2 @@
+id,inmate_number,last_name,first_name,last_sent,package_count,pending_letter,eligibility,prison
+5,123,Test2,Test1,2022-01-10,1,2022-02-02,TRUE,39

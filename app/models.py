@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class Person(models.Model):
     inmate_number = models.CharField(max_length=50)
     last_name = models.CharField(max_length=200)
@@ -38,8 +37,9 @@ class Prison(models.Model):
     zipcode = models.CharField(max_length=200)
     # WHAT IS GREE
     # Probably omit restrictions ultimately
-    restrictions = models.CharField(max_length=200, null=True)
-    notes = models.CharField(max_length=200, null=True)
+    restrictions = models.CharField(max_length=200, blank=True)
+    legacy_id = models.CharField(max_length=50, unique=True)
+    notes = models.CharField(max_length=200, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
     modified_by=models.ForeignKey(User, null=True, related_name='prison_modified_by_user', on_delete=models.SET_NULL)
@@ -53,7 +53,7 @@ class Letter(models.Model):
     date_received = models.DateField(null=True, blank=True)
     date_processed = models.DateField(null=True, blank=True)
     workflow_stage = models.CharField(max_length=200)
-    notes = models.CharField(max_length=200, null=True)
+    notes = models.CharField(max_length=200, blank=True)
     person = models.ForeignKey('Person', on_delete=models.CASCADE)
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
