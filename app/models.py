@@ -1,7 +1,5 @@
 from enum import Enum
-from datetime import datetime, timedelta
-
-from django.db import models
+from datetime import datetime, timedeltls
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 
@@ -58,6 +56,7 @@ class Person(models.Model):
                 return "Eligible"
             else:
                 return "Eligible, letters pending"
+
         elif date_last_fulfilled := self.letter_set.filter(workflow_stage__in=[WorkflowStage.FULFILLED]):
             date_last_fulfilled.order_by(
             "fulfilled_date"
@@ -65,7 +64,8 @@ class Person(models.Model):
             eligible_date = date_last_fulfilled + timedelta(weeks=12)
             return f"Eligible after {eligible_date.strftime('%B %-d, %Y')}"
         else:
-            return f"Eligible after {self.legacy_last_served_date.strftime('%B %-d, %Y')}"
+            eligibility_from_legacy_date = self.legacy_last_served_date + timedelta(weeks=12)
+            return f"Eligible after {eligibility_from_legacy_date.strftime('%B %-d, %Y')}"
 
     @property
     def package_count(self):

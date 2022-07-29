@@ -4,6 +4,8 @@ import json
 from django.contrib import admin
 from django.db.models import F
 from django.forms import ModelForm
+from django.urls import reverse
+from django.utils.html import format_html
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -94,7 +96,7 @@ class PersonAdmin(ImportExportModelAdmin, VersionAdmin):
 
     list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count',)
     readonly_fields = ('current_prison',)
-    list_filter = ('prisons__prison',)
+    # list_filter = ('prisons__prison',)
     search_fields = ('inmate_number', 'last_name', 'first_name',)
     list_display_links = ('first_name', 'last_name', 'id',)
     readonly_fields = ('created_by', 'modified_by', 'created_date', 'modified_date',)
@@ -103,7 +105,21 @@ class PersonAdmin(ImportExportModelAdmin, VersionAdmin):
     def current_prison(self, person):
         if not person.current_prison:
             return
-        return person.current_prison.name
+        link = reverse("admin:app_prison_change", kwargs={"object_id": person.current_prison.id})
+        return format_html(f"<a href={link}>{person.current_prison.name}</a>")
+
+    current_prison.allow_tags = True
+
+    # This is fragile due to workflow_stage__in
+    def pending_letter_count(self, person):
+        if not person.pending_letter_count:
+            return
+        return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in=processed,awaiting_fulfillment>{person.pending_letter_count}</a>")
+
+    def letter_count(self, person):
+        if not person.letter_count:
+            return
+        return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}>{person.letter_count}</a>")
 
 
 @admin.register(Prison)
@@ -117,10 +133,10 @@ class PrisonAdmin(ImportExportModelAdmin, VersionAdmin):
 @admin.register(Letter)
 class LetterAdmin(VersionAdmin):
     list_display = ('id', 'person', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'eligibility', 'created_by',)
-    list_filter = ('workflow_stage', 'person',)
+    list_filter = ('workflow_stage',)
     list_display_links = ('id',)
     readonly_fields = ('created_date', 'modified_date', 'created_by',)
-    fields = ('person', 'workflow_stage', 'postmark_date', 'processed_date', 'created_date', 'modified_date', 'created_by',)
+    fields = ('person', 'workflow_stage', 'postmark_date', 'processed_date', 'created_date', 'modified_date',)
     actions = (move_to_awaiting_fulfillment, move_to_fulfilled, move_to_processed,)
 
     def eligibility(self, letter):
