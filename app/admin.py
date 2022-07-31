@@ -46,23 +46,20 @@ class PersonResource(resources.ModelResource):
         report_skipped = True
         fields = ('id', 'inmate_number', 'last_name', 'first_name', 'legacy_prison_id', 'legacy_last_served_date')
 
-    def after_import(self, dataset, result, using_transactions, dry_run, **kwargs):
-        row_data = json.loads(dataset.get_json())
-        for row in row_data:
-            person_id = row["id"]
-            legacy_prison_id = row["legacy_prison_id"]
-            prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
-            if not prison:
-                raise Exception(f"Prison with legacy id {legacy_prison_id} not found!")
-            existing = PersonPrison.objects.filter(person_id=person_id, prison_id=prison.id).first()
-            if existing and existing.current:
-                continue
-            elif existing:
-                existing.current = True
-                PersonPrison.objects.filter(person_id=person_id).update(current=False)
-                existing.save()
-                continue
-            PersonPrison.objects.create(person_id=person_id, prison_id=prison.id, current=True)
+    def after_save_instance(self, instance, using_transactions, dry_run):
+        legacy_prison_id = instance.legacy_prison_id
+        prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
+        if not prison:
+            raise Exception(f"Prison with legacy id {legacy_prison_id} not found!")
+        existing = PersonPrison.objects.filter(person_id=instance.id, prison_id=prison.id).first()
+        if existing and existing.current:
+            return
+        elif existing:
+            existing.current = True
+            PersonPrison.objects.filter(person_id=instance.id).update(current=False)
+            existing.save()
+            return
+        PersonPrison.objects.create(person_id=instance.id, prison_id=prison.id, current=True)
 
 
 class PrisonResource(resources.ModelResource):
