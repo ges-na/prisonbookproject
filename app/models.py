@@ -10,6 +10,8 @@ class WorkflowStage(models.TextChoices):
     PROCESSED = "processed", "Processed"
     AWAITING_FULFILLMENT = "awaiting_fulfillment", "Awaiting fulfillment"
     FULFILLED = "fulfilled", "Fulfilled"
+    JUST_PADA = "just_pada", "Just PADA"
+    PROBLEM = "problem", "Problem"
 
 
 class PersonManager(models.Manager):
@@ -18,12 +20,24 @@ class PersonManager(models.Manager):
 
 
 class Person(models.Model):
+
+
+    class Statuses(models.TextChoices):
+        SOLITARY = "solitary", "Solitary"
+        LIFER = "lifer", "Lifer"
+
     inmate_number = models.CharField(max_length=50)
     last_name = models.CharField(max_length=200)
     first_name = models.CharField(max_length=200)
     created_date = models.DateTimeField(auto_now_add=True)
     legacy_prison_id = models.SmallIntegerField(null=True)
     legacy_last_served_date = models.DateTimeField(null=True, default=None)
+    notes = models.CharField(max_length=500, blank=True)
+    status = models.CharField(
+        max_length=200,
+        choices=Statuses.choices,
+        blank=True
+    )
     modified_date = models.DateTimeField(auto_now=True)
     modified_by=models.ForeignKey(User, null=True, related_name='person_modified_by_user', on_delete=models.SET_NULL, default=User)
     created_by=models.ForeignKey(User, null=True, related_name='person_created_by_user', on_delete=models.SET_NULL, default=User)
@@ -100,13 +114,28 @@ class Person(models.Model):
 
 
 class Prison(models.Model):
+
+
+    class PrisonTypes(models.TextChoices):
+        SCI = "sci", "SCI"
+        FCI = "fci", "FCI"
+        CITY = "city", "City"
+        COUNTY = "county", "County"
+        FDC = "fdc", "FDC"
+        tMMIGRATION_DETENTION = "immigration_detention", "Immigration Detention Facility"
+        BOOT_CAMP = "boot_camp", "Boot Camp"
+
+
     name = models.CharField(max_length=200)
-    prison_type = models.CharField(max_length=50)
-    street_address = models.CharField(max_length=200)
-    city = models.CharField(max_length=200)
-    state = models.CharField(max_length=50)
-    zipcode = models.CharField(max_length=200)
-    # Probably omit restrictions ultimately
+    prison_type = models.CharField(
+        max_length=200,
+        choices=PrisonTypes.choices
+    )
+    legacy_address = models.CharField(max_length=200, blank=True)
+    mailing_address = models.CharField(max_length=200, blank=True)
+    mailing_city = models.CharField(max_length=200, blank=True)
+    mailing_state = models.CharField(max_length=50, blank=True)
+    mailing_zipcode = models.CharField(max_length=200, blank=True)
     restrictions = models.CharField(max_length=200, blank=True)
     legacy_id = models.CharField(max_length=50, unique=True, blank=True)
     notes = models.CharField(max_length=200, blank=True)
@@ -136,7 +165,7 @@ class Letter(models.Model):
     )
     notes = models.CharField(max_length=200, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
+    # modified_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.person.last_name} - {self.postmark_date}"

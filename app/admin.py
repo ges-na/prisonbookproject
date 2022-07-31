@@ -63,11 +63,13 @@ class PersonResource(resources.ModelResource):
 
 
 class PrisonResource(resources.ModelResource):
+
+
     class Meta:
         model = Prison
         skip_unchanged = True
         report_skipped = True
-        fields = ('id', 'name', 'prison_type', 'legacy_id', 'street_address', 'city', 'state', 'zipcode', 'notes')
+        fields = ('id', 'name', 'prison_type', 'legacy_id', 'legacy_address', 'mailing_address', 'mailing_city', 'mailing_state', 'mailing_zipcode', 'restrictions', 'notes')
 
 
 class PersonPrisonForm(ModelForm):
@@ -90,13 +92,13 @@ class PersonPrisonInline(admin.TabularInline):
 class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
 
-    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'last_served', 'current_prison', 'current_prison_address', 'package_count', 'pending_letter_count', 'letter_count',)
+    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'status', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count',)
     readonly_fields = ('current_prison',)
     # list_filter = ('prisons__prison',)
     search_fields = ('inmate_number', 'last_name', 'first_name',)
     list_display_links = ('first_name', 'last_name', 'id',)
     readonly_fields = ('created_by', 'modified_by', 'created_date', 'modified_date', 'eligibility', 'package_count', 'pending_letter_count', 'letter_count')
-    fields = ('inmate_number', 'eligibility', 'last_name', 'first_name', 'package_count', 'pending_letter_count', 'letter_count',)
+    fields = ('inmate_number', 'eligibility', 'last_name', 'first_name', 'package_count', 'pending_letter_count', 'letter_count', 'status',)
     inlines = [PersonPrisonInline]
 
     def current_prison(self, person):
@@ -118,31 +120,39 @@ class PersonAdmin(ImportExportModelAdmin):
             return
         return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}>{person.letter_count}</a>")
 
-    def current_prison_address(self, person):
-        if not person.current_prison:
-            return
-        curr_prison = person.current_prison
-        return format_html(f"{curr_prison.name}<br/>{curr_prison.street_address}<br/>{curr_prison.city}, {curr_prison.state} {curr_prison.zipcode}")
-
-    current_prison_address.allow_tags = True
 
 @admin.register(Prison)
 class PrisonAdmin(ImportExportModelAdmin):
     resource_class = PrisonResource
 
-    list_display = ('id', 'name', 'prison_type', 'street_address', 'city', 'zipcode', 'restrictions', 'notes',)
+    # All mail goes through Security Processing Center, addresses suppressed
+    list_display = ('id', 'name', 'prison_type', 'display_mailing_address', 'restrictions', 'notes',)
     list_display_links = ('name',)
-    fields = ('name', 'prison_type', 'street_address', 'city', 'state', 'zipcode', 'restrictions', 'notes',)
+    list_filter = ('prison_type',)
+    search_fields = ('name', 'notes', 'restrictions',)
+    fields = ('name', 'prison_type', 'mailing_address', 'mailing_city', 'mailing_state', 'mailing_zipcode', 'legacy_address', 'restrictions', 'notes',)
+
+    def display_mailing_address(self, prison):
+        if not prison.mailing_address:
+            return
+        return format_html(f"{prison.name}<br/>{prison.mailing_address}<br/>{prison.mailing_city}, {prison.mailing_state} {prison.mailing_zipcode}")
+
+    display_mailing_address.allow_tags = True
+    display_mailing_address.short_description = "Person"
 
 
 @admin.register(Letter)
 class LetterAdmin(ImportExportModelAdmin):
-    list_display = ('id', 'person_list_display', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'eligibility',)
+    list_display = ('letter_name', 'person_list_display', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'prison_mailing_address', 'eligibility',)
     list_filter = ('workflow_stage',)
-    list_display_links = ('id',)
-    readonly_fields = ('created_date', 'modified_date', 'created_by',)
-    fields = ('person', 'workflow_stage', 'postmark_date', 'processed_date', 'created_date', 'modified_date',)
+    list_display_links = ('letter_name',)
+    search_fields = ('person__last_name', 'person__first_name', 'person__inmate_number',)
+    readonly_fields = ('created_date', 'created_by',)
+    fields = ('person', 'workflow_stage', 'postmark_date', 'processed_date', 'created_date',)
     actions = (move_to_awaiting_fulfillment, move_to_fulfilled, move_to_processed,)
+
+    def letter_name(self, letter):
+        return f"{letter.person.last_name}, {letter.person.first_name} - {letter.postmark_date}"
 
     def person_list_display(self, letter):
         if not letter.person:
@@ -153,6 +163,14 @@ class LetterAdmin(ImportExportModelAdmin):
 
     person_list_display.allow_tags = True
     person_list_display.short_description = "Person"
+
+    def prison_mailing_address(self, letter):
+        if not letter.person.current_prison:
+            return
+        curr_prison = letter.person.current_prison
+        return format_html(f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}")
+
+    prison_mailing_address.allow_tags = True
 
     def eligibility(self, letter):
         return letter.person.eligibility
