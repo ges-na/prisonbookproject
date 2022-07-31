@@ -57,13 +57,12 @@ class Person(models.Model):
             if self.pending_letter_count == 0:
                 return "Eligible"
             else:
-                return "Eligible, letters pending"
-
+                return f"Eligible, {self.pending_letter_count} letters pending"
         elif date_last_fulfilled := self.letter_set.filter(workflow_stage__in=[WorkflowStage.FULFILLED]):
-            date_last_fulfilled.order_by(
+            last_fulfilled_date = date_last_fulfilled.order_by(
             "fulfilled_date"
             ).first().fulfilled_date
-            eligible_date = date_last_fulfilled + timedelta(weeks=12)
+            eligible_date = last_fulfilled_date + timedelta(weeks=12)
             return f"Eligible after {eligible_date.strftime('%B %-d, %Y')}"
         else:
             eligibility_from_legacy_date = self.legacy_last_served_date + timedelta(weeks=12)
