@@ -62,13 +62,26 @@ class Person(models.Model):
             return datetime.date(self.legacy_last_served_date)
         return
 
-    #need to figure out what timedelta ppbp wants
+    @property
+    def has_been_served(self):
+        if not self.last_served:
+            return False
+        return True
+
+    @property
+    def has_pending_letters(self):
+        if not self.pending_letter_count:
+            return False
+        return True
+
     @property
     def eligibility(self):
-        if not self.last_served:
-            return "Eligible"
-        if self.last_served <= (datetime.now().date() - timedelta(weeks=12)):
-            if self.pending_letter_count == 0:
+        if not self.has_been_served:
+            if not self.has_pending_letters:
+                return "Eligible"
+            return f"Eligible, {self.pending_letter_count} letters pending"
+        elif self.last_served <= (datetime.now().date() - timedelta(weeks=12)):
+            if not self.has_pending_letters:
                 return "Eligible"
             else:
                 return f"Eligible, {self.pending_letter_count} letters pending"
