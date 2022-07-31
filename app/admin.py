@@ -120,6 +120,11 @@ class PersonAdmin(ImportExportModelAdmin):
             return
         return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}>{person.letter_count}</a>")
 
+    def package_count(self, person):
+        if not person.package_count:
+            return
+        return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in=fulfilled>{person.package_count}</a>")
+
 
 @admin.register(Prison)
 class PrisonAdmin(ImportExportModelAdmin):
@@ -138,7 +143,7 @@ class PrisonAdmin(ImportExportModelAdmin):
         return format_html(f"{prison.name}<br/>{prison.mailing_address}<br/>{prison.mailing_city}, {prison.mailing_state} {prison.mailing_zipcode}")
 
     display_mailing_address.allow_tags = True
-    display_mailing_address.short_description = "Person"
+    display_mailing_address.short_description = "Mailing Address"
 
 
 @admin.register(Letter)
