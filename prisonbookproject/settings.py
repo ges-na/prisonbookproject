@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'django_extensions',
     'ajax_select',
     'import_export',
-    'reversion',
 ]
 
 MIDDLEWARE = [

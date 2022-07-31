@@ -11,7 +11,6 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 from import_export import widgets
-from reversion.admin import VersionAdmin
 from ajax_select import make_ajax_form
 from ajax_select.fields import autoselect_fields_check_can_add
 
@@ -91,15 +90,16 @@ class PersonPrisonInline(admin.TabularInline):
 
 
 @admin.register(Person)
-class PersonAdmin(ImportExportModelAdmin, VersionAdmin):
+class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
 
-    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count',)
+    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'last_served', 'current_prison', 'current_prison_address', 'package_count', 'pending_letter_count', 'letter_count',)
     readonly_fields = ('current_prison',)
     # list_filter = ('prisons__prison',)
     search_fields = ('inmate_number', 'last_name', 'first_name',)
     list_display_links = ('first_name', 'last_name', 'id',)
-    readonly_fields = ('created_by', 'modified_by', 'created_date', 'modified_date',)
+    readonly_fields = ('created_by', 'modified_by', 'created_date', 'modified_date', 'eligibility', 'package_count', 'pending_letter_count', 'letter_count')
+    fields = ('inmate_number', 'eligibility', 'last_name', 'first_name', 'package_count', 'pending_letter_count', 'letter_count',)
     inlines = [PersonPrisonInline]
 
     def current_prison(self, person):
@@ -121,23 +121,41 @@ class PersonAdmin(ImportExportModelAdmin, VersionAdmin):
             return
         return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}>{person.letter_count}</a>")
 
+    def current_prison_address(self, person):
+        if not person.current_prison:
+            return
+        curr_prison = person.current_prison
+        return format_html(f"{curr_prison.name}<br/>{curr_prison.street_address}<br/>{curr_prison.city}, {curr_prison.state} {curr_prison.zipcode}")
+
+    current_prison_address.allow_tags = True
 
 @admin.register(Prison)
-class PrisonAdmin(ImportExportModelAdmin, VersionAdmin):
+class PrisonAdmin(ImportExportModelAdmin):
     resource_class = PrisonResource
 
-    list_display = ('id', 'name', 'prison_type', 'street_address', 'restrictions', 'notes',)
+    list_display = ('id', 'name', 'prison_type', 'street_address', 'city', 'zipcode', 'restrictions', 'notes',)
     list_display_links = ('name',)
+    fields = ('name', 'prison_type', 'street_address', 'city', 'state', 'zipcode', 'restrictions', 'notes',)
 
 
 @admin.register(Letter)
-class LetterAdmin(VersionAdmin):
-    list_display = ('id', 'person', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'eligibility', 'created_by',)
+class LetterAdmin(ImportExportModelAdmin):
+    list_display = ('id', 'person_list_display', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'eligibility',)
     list_filter = ('workflow_stage',)
     list_display_links = ('id',)
     readonly_fields = ('created_date', 'modified_date', 'created_by',)
     fields = ('person', 'workflow_stage', 'postmark_date', 'processed_date', 'created_date', 'modified_date',)
     actions = (move_to_awaiting_fulfillment, move_to_fulfilled, move_to_processed,)
+
+    def person_list_display(self, letter):
+        if not letter.person:
+            # This is a problem, do something smarter here
+            return
+        link = reverse('admin:app_person_change', kwargs={'object_id': letter.person.id})
+        return format_html(f"<a href={link}>{letter.person.last_name}</a>")
+
+    person_list_display.allow_tags = True
+    person_list_display.short_description = "Person"
 
     def eligibility(self, letter):
         return letter.person.eligibility
@@ -150,6 +168,7 @@ class LetterAdmin(VersionAdmin):
         form = super().get_form(request, obj, **kwargs)
         autoselect_fields_check_can_add(form, self.model, request.user)
         return form
+
 
 # class PrisonField(Field):
 #     def save(self, obj, data, **kwargs):

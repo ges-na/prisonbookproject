@@ -1,5 +1,7 @@
 from enum import Enum
-from datetime import datetime, timedeltls
+from datetime import datetime, timedelta
+
+from django.db import models
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 
@@ -107,7 +109,7 @@ class Prison(models.Model):
     zipcode = models.CharField(max_length=200)
     # Probably omit restrictions ultimately
     restrictions = models.CharField(max_length=200, blank=True)
-    legacy_id = models.CharField(max_length=50, unique=True)
+    legacy_id = models.CharField(max_length=50, unique=True, blank=True)
     notes = models.CharField(max_length=200, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
