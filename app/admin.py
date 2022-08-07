@@ -46,6 +46,9 @@ class PersonResource(resources.ModelResource):
         report_skipped = True
         fields = ('id', 'inmate_number', 'last_name', 'first_name', 'legacy_prison_id', 'legacy_last_served_date')
 
+    def after_import_instance(instance, new, row_number=None, **kwargs):
+        instance.inmate_id.upper()
+
     def after_save_instance(self, instance, using_transactions, dry_run):
         legacy_prison_id = instance.legacy_prison_id
         prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
@@ -73,7 +76,6 @@ class PrisonResource(resources.ModelResource):
 
 
 class PersonPrisonForm(ModelForm):
-
     def __init__(self, *args, **kwargs):
         super(PersonPrisonForm, self).__init__(*args, **kwargs)
         if self.instance.pk:
@@ -87,10 +89,30 @@ class PersonPrisonInline(admin.TabularInline):
     fields = ('prison', 'current',)
     form = PersonPrisonForm
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "prison": kwargs["queryset"] = Prison.objects.all().order_by('name')
+        return super(PersonPrisonInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class PersonForm(ModelForm):
+    def clean_inmate_number(self):
+        self.cleaned_data["inmate_number"] = self.cleaned_data["inmate_number"].upper()
+        return self.cleaned_data["inmate_number"]
+
+    def clean_first_name(self):
+        self.cleaned_data["first_name"] = self.cleaned_data["first_name"].upper()
+        return self.cleaned_data["first_name"]
+
+    def clean_last_name(self):
+        self.cleaned_data["last_name"] = self.cleaned_data["last_name"].upper()
+        return self.cleaned_data["last_name"]
+
 
 @admin.register(Person)
 class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
+
+    form = PersonForm
 
     list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'status', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count',)
     readonly_fields = ('current_prison',)
