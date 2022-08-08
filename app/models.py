@@ -26,10 +26,9 @@ class Person(models.Model):
         SOLITARY = "solitary", "Solitary"
         LIFER = "lifer", "Lifer"
 
-    inmate_number = models.CharField(max_length=50)
+    inmate_number = models.CharField(max_length=50, unique=True)
     last_name = models.CharField(max_length=200)
     first_name = models.CharField(max_length=200)
-    created_date = models.DateTimeField(auto_now_add=True)
     legacy_prison_id = models.SmallIntegerField(null=True)
     legacy_last_served_date = models.DateTimeField(null=True, default=None)
     notes = models.CharField(max_length=500, blank=True)
@@ -38,9 +37,9 @@ class Person(models.Model):
         choices=Statuses.choices,
         blank=True
     )
+    created_date = models.DateTimeField(auto_now_add=True)
+    created_by=models.ForeignKey(User, null=True, related_name='person_created_by_user', on_delete=models.SET_NULL)
     modified_date = models.DateTimeField(auto_now=True)
-    modified_by=models.ForeignKey(User, null=True, related_name='person_modified_by_user', on_delete=models.SET_NULL, default=User)
-    created_by=models.ForeignKey(User, null=True, related_name='person_created_by_user', on_delete=models.SET_NULL, default=User)
 
     class Meta:
         # ordering = ('-pending_letter',)
@@ -125,6 +124,11 @@ class Person(models.Model):
     def all_letters(self):
         return self.letter_set.all()
 
+    def save(self, *args, **kwargs):
+        if self.inmate_number == "":
+            self.inmate_number == None
+        super().save(*args, **kwargs)
+
 
 class Prison(models.Model):
 
@@ -153,9 +157,8 @@ class Prison(models.Model):
     legacy_id = models.CharField(max_length=50, unique=True, blank=True)
     notes = models.CharField(max_length=200, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
-    modified_by=models.ForeignKey(User, null=True, related_name='prison_modified_by_user', on_delete=models.SET_NULL)
     created_by=models.ForeignKey(User, null=True, related_name='prison_created_by_user', on_delete=models.SET_NULL)
+    modified_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -163,9 +166,6 @@ class Prison(models.Model):
 
 class Letter(models.Model):
     person = models.ForeignKey('Person', on_delete=models.CASCADE)
-    modified_by=models.ForeignKey(User, null=True, related_name='letter_modified_by_user', on_delete=models.SET_NULL, default=User)
-    created_by=models.ForeignKey(User, null=True, related_name='letter_created_by_user', on_delete=models.SET_NULL, default=User)
-
     postmark_date = models.DateField(null=True, blank=True)
     processed_date = models.DateField(null=True, blank=True, default=now)
     awaiting_fulfillment_date = models.DateField(null=True, blank=True)
@@ -178,7 +178,8 @@ class Letter(models.Model):
     )
     notes = models.CharField(max_length=200, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
-    # modified_date = models.DateTimeField(auto_now=True)
+    created_by=models.ForeignKey(User, null=True, related_name='letter_created_by_user', on_delete=models.SET_NULL)
+    modified_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.person.last_name} - {self.postmark_date}"
@@ -189,9 +190,8 @@ class PersonPrison(models.Model):
     prison = models.ForeignKey('Prison', on_delete=models.CASCADE, related_name='people')
     current = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
-    modified_by=models.ForeignKey(User, null=True, related_name='personprison_modified_by_user', on_delete=models.SET_NULL)
     created_by=models.ForeignKey(User, null=True, related_name='personprison_created_by_user', on_delete=models.SET_NULL)
+    modified_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.prison.name} - {self.person.last_name}"

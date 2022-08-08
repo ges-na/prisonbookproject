@@ -96,7 +96,8 @@ class PersonPrisonInline(admin.TabularInline):
 
 class PersonForm(ModelForm):
     def clean_inmate_number(self):
-        self.cleaned_data["inmate_number"] = self.cleaned_data["inmate_number"].upper()
+        cleaned_inmate_num = "".join(list(filter(str.isalnum, self.cleaned_data["inmate_number"])))
+        self.cleaned_data["inmate_number"] = cleaned_inmate_num.upper()
         return self.cleaned_data["inmate_number"]
 
     def clean_first_name(self):
@@ -114,12 +115,12 @@ class PersonAdmin(ImportExportModelAdmin):
 
     form = PersonForm
 
-    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'status', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count',)
+    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'status', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count', 'created_by')
     readonly_fields = ('current_prison',)
     # list_filter = ('prisons__prison',)
     search_fields = ('inmate_number', 'last_name', 'first_name',)
     list_display_links = ('first_name', 'last_name', 'id',)
-    readonly_fields = ('created_by', 'modified_by', 'created_date', 'modified_date', 'eligibility', 'package_count', 'pending_letter_count', 'letter_count')
+    readonly_fields = ('created_by', 'created_date', 'modified_date', 'eligibility', 'package_count', 'pending_letter_count', 'letter_count')
     fields = ('inmate_number', 'eligibility', 'last_name', 'first_name', 'package_count', 'pending_letter_count', 'letter_count', 'status',)
     inlines = [PersonPrisonInline]
 
@@ -147,6 +148,11 @@ class PersonAdmin(ImportExportModelAdmin):
             return
         return format_html(f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in=fulfilled>{person.package_count}</a>")
 
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
 
 @admin.register(Prison)
 class PrisonAdmin(ImportExportModelAdmin):
@@ -166,6 +172,11 @@ class PrisonAdmin(ImportExportModelAdmin):
 
     display_mailing_address.allow_tags = True
     display_mailing_address.short_description = "Mailing Address"
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Letter)
@@ -211,8 +222,7 @@ class LetterAdmin(ImportExportModelAdmin):
         autoselect_fields_check_can_add(form, self.model, request.user)
         return form
 
-
-# class PrisonField(Field):
-#     def save(self, obj, data, **kwargs):
-#         kwargs.pop('is_m2m', None)
-#         cleaned = self.clean(data, **kwargs)
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

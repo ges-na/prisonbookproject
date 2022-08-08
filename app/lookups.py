@@ -1,13 +1,13 @@
+from django.db.models import Q
 from ajax_select import register, LookupChannel
 from .models import Person
 
 @register('person')
 class PersonLookup(LookupChannel):
-
     model = Person
 
-    def get_query(self, q, request):
-        return self.model.objects.filter(inmate_number__icontains=q).order_by('inmate_number')[:10]
+    def get_query(self, query, request):
+        return self.model.objects.filter(Q(inmate_number__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query)).order_by('inmate_number')[:10]
 
     def format_match(self, person):
         return f"<span class='person'>{person.inmate_number} - {person.last_name}, {person.first_name}</span>"
