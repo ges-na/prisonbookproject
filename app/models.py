@@ -159,6 +159,8 @@ class Prison(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     created_by=models.ForeignKey(User, null=True, related_name='prison_created_by_user', on_delete=models.SET_NULL)
     modified_date = models.DateTimeField(auto_now=True)
+    # not sure about this, only implemented here currently, see save method on PrisonAdmin
+    modified_by=models.ForeignKey(User, null=True, related_name='prison_modified_by_user', on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
@@ -188,7 +190,7 @@ class Letter(models.Model):
 class PersonPrison(models.Model):
     person = models.ForeignKey('Person', on_delete=models.CASCADE, related_name='prisons')
     prison = models.ForeignKey('Prison', on_delete=models.CASCADE, related_name='people')
-    current = models.BooleanField(default=False)
+    current = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
     created_by=models.ForeignKey(User, null=True, related_name='personprison_created_by_user', on_delete=models.SET_NULL)
     modified_date = models.DateTimeField(auto_now=True)

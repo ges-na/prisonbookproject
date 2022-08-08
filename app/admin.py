@@ -19,7 +19,6 @@ from .models import Person, Prison, Letter, PersonPrison, WorkflowStage
 #probably only good for testing
 @admin.action(description='Mark selected letters as Processed')
 def move_to_processed(modeladmin, request, queryset):
-    now = datetime.datetime.now()
     queryset.update(awaiting_fulfillment_date=None, fulfilled_date=None, workflow_stage=WorkflowStage.PROCESSED)
 
 #should this blank fulfilled_date?
@@ -46,9 +45,6 @@ class PersonResource(resources.ModelResource):
         report_skipped = True
         fields = ('id', 'inmate_number', 'last_name', 'first_name', 'legacy_prison_id', 'legacy_last_served_date')
 
-    def after_import_instance(instance, new, row_number=None, **kwargs):
-        instance.inmate_id.upper()
-
     def after_save_instance(self, instance, using_transactions, dry_run):
         legacy_prison_id = instance.legacy_prison_id
         prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
@@ -59,7 +55,7 @@ class PersonResource(resources.ModelResource):
             return
         elif existing:
             existing.current = True
-            PersonPrison.objects.filter(person_id=instance.id).update(current=False)
+            # PersonPrison.objects.filter(person_id=instance.id).update(current=False)
             existing.save()
             return
         PersonPrison.objects.create(person_id=instance.id, prison_id=prison.id, current=True)
@@ -86,7 +82,7 @@ class PersonPrisonInline(admin.TabularInline):
     model = PersonPrison
     extra = 0
     can_delete = False
-    fields = ('prison', 'current',)
+    fields = ('prison', 'current')
     form = PersonPrisonForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -115,7 +111,7 @@ class PersonAdmin(ImportExportModelAdmin):
 
     form = PersonForm
 
-    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'status', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count', 'created_by')
+    list_display = ('id', 'inmate_number', 'last_name', 'first_name', 'eligibility', 'status', 'last_served', 'current_prison', 'package_count', 'pending_letter_count', 'letter_count', 'created_by', 'created_date', 'modified_date')
     readonly_fields = ('current_prison',)
     # list_filter = ('prisons__prison',)
     search_fields = ('inmate_number', 'last_name', 'first_name',)
@@ -151,6 +147,7 @@ class PersonAdmin(ImportExportModelAdmin):
     def save_model(self, request, obj, form, change):
         if not obj.pk:
             obj.created_by = request.user
+        obj.modified_date = datetime.datetime.now()
         super().save_model(request, obj, form, change)
 
 
@@ -159,7 +156,7 @@ class PrisonAdmin(ImportExportModelAdmin):
     resource_class = PrisonResource
 
     # All mail goes through Security Processing Center, addresses suppressed
-    list_display = ('id', 'name', 'prison_type', 'display_mailing_address', 'restrictions', 'notes',)
+    list_display = ('id', 'name', 'prison_type', 'display_mailing_address', 'restrictions', 'notes', 'created_by', 'created_date', 'modified_by', 'modified_date')
     list_display_links = ('name',)
     list_filter = ('prison_type',)
     search_fields = ('name', 'notes', 'restrictions',)
@@ -176,12 +173,14 @@ class PrisonAdmin(ImportExportModelAdmin):
     def save_model(self, request, obj, form, change):
         if not obj.pk:
             obj.created_by = request.user
+        obj.modified_by = request.user
+        obj.modified_date = datetime.datetime.now()
         super().save_model(request, obj, form, change)
 
 
 @admin.register(Letter)
 class LetterAdmin(ImportExportModelAdmin):
-    list_display = ('letter_name', 'person_list_display', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'prison_mailing_address', 'eligibility',)
+    list_display = ('letter_name', 'person_list_display', 'workflow_stage', 'postmark_date', 'processed_date', 'awaiting_fulfillment_date', 'fulfilled_date', 'prison_mailing_address', 'eligibility', 'created_by', 'created_date', 'modified_date')
     list_filter = ('workflow_stage',)
     list_display_links = ('letter_name',)
     search_fields = ('person__last_name', 'person__first_name', 'person__inmate_number',)
@@ -225,4 +224,5 @@ class LetterAdmin(ImportExportModelAdmin):
     def save_model(self, request, obj, form, change):
         if not obj.pk:
             obj.created_by = request.user
+        obj.modified_date = datetime.datetime.now()
         super().save_model(request, obj, form, change)
