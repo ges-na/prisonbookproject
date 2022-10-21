@@ -43,6 +43,18 @@ def move_to_fulfilled(modeladmin, request, queryset):
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
 
 
+# @admin.action(
+#     description="Mark selected letters as Fulfilled, provide specific date to apply"
+# )
+# def move_to_fulfilled_backdated(modeladmin, request, queryset):
+#     for obj in queryset:
+#         obj.person.package_count + 1
+#         obj.save()
+#     queryset.update(
+#         fulfilled_date=request.selected_date, workflow_stage=WorkflowStage.FULFILLED
+#     )
+
+
 class PersonResource(resources.ModelResource):
     legacy_last_served_date = Field(
         attribute="legacy_last_served_date",

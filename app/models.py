@@ -162,7 +162,7 @@ class Prison(models.Model):
     mailing_zipcode = models.CharField(max_length=200, blank=True)
     restrictions = models.CharField(max_length=200, blank=True)
     accepts_books = models.CharField(
-        max_length=200, choices=["True", "False", "Unknown"]
+        max_length=200, choices=[(True, "True"), (False, "False"), (None, "Unknown")]
     )
     legacy_id = models.CharField(max_length=50, unique=True, blank=True)
     notes = models.CharField(max_length=200, blank=True)

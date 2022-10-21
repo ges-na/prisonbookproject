@@ -1,0 +1,7 @@
+.git/
+__pycache__/
+
+fly.toml
+
+# Files that store secrets
+.env
