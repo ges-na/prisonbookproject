@@ -3,7 +3,7 @@ from enum import Enum
 
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils.timezone import now
+from django.utils.timezone import make_aware, now
 
 
 class WorkflowStage(models.TextChoices):
@@ -59,7 +59,7 @@ class Person(models.Model):
         ):
             return fulfilled_letters.order_by("fulfilled_date").first().fulfilled_date
         elif self.legacy_last_served_date:
-            return datetime.date(self.legacy_last_served_date)
+            return self.legacy_last_served_date
         return
 
     @property
@@ -76,11 +76,13 @@ class Person(models.Model):
 
     @property
     def eligibility(self):
+        ninety_days_ago = make_aware((datetime.now() - timedelta(days=90)))
+
         if not self.has_been_served:
             if not self.has_pending_letters:
                 return "Eligible"
             return f"Eligible, {self.pending_letter_count} letters pending"
-        elif self.last_served <= (datetime.now().date() - timedelta(days=90)):
+        elif self.last_served <= ninety_days_ago:
             if not self.has_pending_letters:
                 return "Eligible"
             else:
@@ -189,9 +191,9 @@ class Prison(models.Model):
 class Letter(models.Model):
     person = models.ForeignKey("Person", on_delete=models.CASCADE)
     postmark_date = models.DateField(null=True, blank=True)
-    stage1_complete_date = models.DateField(null=True, blank=True, default=now)
-    awaiting_fulfillment_date = models.DateField(null=True, blank=True)
-    fulfilled_date = models.DateField(null=True, blank=True)
+    stage1_complete_date = models.DateTimeField(null=True, blank=True, default=now)
+    awaiting_fulfillment_date = models.DateTimeField(null=True, blank=True)
+    fulfilled_date = models.DateTimeField(null=True, blank=True)
     # change to choices
     workflow_stage = models.CharField(
         max_length=200,

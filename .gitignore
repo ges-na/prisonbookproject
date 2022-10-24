@@ -3,3 +3,4 @@
 org_data/*
 */__pycache__/*
 static/
+data/

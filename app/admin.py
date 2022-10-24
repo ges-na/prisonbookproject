@@ -1,10 +1,11 @@
-import datetime
+from datetime import datetime
 
 from ajax_select import make_ajax_form
 from ajax_select.fields import autoselect_fields_check_can_add
 from django.contrib import admin
 from django.forms import ModelForm
 from django.urls import reverse
+from django.utils.timezone import make_aware
 from django.utils.html import format_html
 from import_export import resources, widgets
 from import_export.admin import ImportExportModelAdmin
@@ -26,7 +27,7 @@ def move_to_stage1_complete(modeladmin, request, queryset):
 # should this blank fulfilled_date?
 @admin.action(description="Mark selected letters as Awaiting Fulfillment")
 def move_to_awaiting_fulfillment(modeladmin, request, queryset):
-    now = datetime.datetime.now()
+    now = make_aware(datetime.now())
     queryset.update(
         awaiting_fulfillment_date=now,
         fulfilled_date=None,
@@ -34,13 +35,23 @@ def move_to_awaiting_fulfillment(modeladmin, request, queryset):
     )
 
 
+# TODO: currently, if you set this manually on form, it does not update last_served date;
+# turned off in form, only available via admin actions
 @admin.action(description="Mark selected letters as Fulfilled")
 def move_to_fulfilled(modeladmin, request, queryset):
-    now = datetime.datetime.now()
+    now = datetime.now()
     for obj in queryset:
         obj.person.package_count + 1
         obj.save()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
+
+
+@admin.action(
+    description="Manually update last served date for selected people if no letter exists"
+)
+def manually_update_last_served_date(modeladmin, request, queryset):
+    now = datetime.now()
+    queryset.update(legacy_last_served_date=now)
 
 
 # @admin.action(
@@ -56,11 +67,18 @@ def move_to_fulfilled(modeladmin, request, queryset):
 
 
 class PersonResource(resources.ModelResource):
-    legacy_last_served_date = Field(
-        attribute="legacy_last_served_date",
-        column_name="legacy_last_served_date",
-        widget=widgets.DateWidget(format="%m/%d/%Y"),
-    )
+    current_prison = Field(attribute="current_prison")
+    last_served = Field(attribute="last_served")
+    eligibility = Field(attribute="eligibility")
+    package_count = Field(attribute="package_count")
+    letter_count = Field(attribute="letter_count")
+    # this causes legacy_last_served_date to be part of the export
+    # even though it is probably confusing
+    # legacy_last_served_date = Field(
+    #     attribute="legacy_last_served_date",
+    #     column_name="legacy_last_served_date",
+    #     widget=widgets.DateTimeWidget("%Y-%m-%d %H:%M:%S.%f"),
+    # )
 
     class Meta:
         model = Person
@@ -71,8 +89,27 @@ class PersonResource(resources.ModelResource):
             "inmate_number",
             "last_name",
             "first_name",
-            "legacy_prison_id",
+            "status",
             "legacy_last_served_date",
+            "legacy_prison_id",
+        )
+        readonly_fields = (
+            "current_prison",
+            "last_served",
+            "eligibility",
+            "letter_count",
+            "package_count",
+        )
+        export_order = (
+            "id",
+            "last_name",
+            "first_name",
+            "status",
+            "current_prison",
+            "last_served",
+            "eligibility",
+            "letter_count",
+            "package_count",
         )
 
     def after_save_instance(self, instance, using_transactions, dry_run):
@@ -107,6 +144,7 @@ class PrisonResource(resources.ModelResource):
             "legacy_id",
             "legacy_address",
             "mailing_address",
+            "additional_mailing_headers",
             "mailing_city",
             "mailing_state",
             "mailing_zipcode",
@@ -160,6 +198,10 @@ class PersonAdmin(ImportExportModelAdmin):
 
     form = PersonForm
 
+    def last_served_display(self, obj):
+        if obj.last_served:
+            return obj.last_served.strftime("%Y-%m-%d")
+
     list_display = (
         "id",
         "inmate_number",
@@ -167,7 +209,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "first_name",
         "eligibility",
         "status",
-        "last_served",
+        "last_served_display",
         "current_prison",
         "package_count",
         "pending_letter_count",
@@ -207,6 +249,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "letter_count",
         "status",
     )
+    actions = (manually_update_last_served_date,)
     inlines = [PersonPrisonInline]
 
     def current_prison(self, person):
@@ -244,7 +287,7 @@ class PersonAdmin(ImportExportModelAdmin):
     def save_model(self, request, obj, form, change):
         if not obj.pk:
             obj.created_by = request.user
-        obj.modified_date = datetime.datetime.now()
+        obj.modified_date = datetime.now()
         super().save_model(request, obj, form, change)
 
 
@@ -275,6 +318,7 @@ class PrisonAdmin(ImportExportModelAdmin):
     fields = (
         "name",
         "prison_type",
+        "additional_mailing_headers",
         "mailing_address",
         "mailing_city",
         "mailing_state",
@@ -287,6 +331,10 @@ class PrisonAdmin(ImportExportModelAdmin):
     def display_mailing_address(self, prison):
         if not prison.mailing_address:
             return
+        if prison.additional_mailing_headers:
+            return format_html(
+                f"{prison.name}<br/>{prison.additional_mailing_headers}<br/>{prison.mailing_address}<br/>{prison.mailing_city}, {prison.mailing_state} {prison.mailing_zipcode}"
+            )
         return format_html(
             f"{prison.name}<br/>{prison.mailing_address}<br/>{prison.mailing_city}, {prison.mailing_state} {prison.mailing_zipcode}"
         )
@@ -298,7 +346,7 @@ class PrisonAdmin(ImportExportModelAdmin):
         if not obj.pk:
             obj.created_by = request.user
         obj.modified_by = request.user
-        obj.modified_date = datetime.datetime.now()
+        obj.modified_date = datetime.now()
         super().save_model(request, obj, form, change)
 
 
@@ -328,6 +376,7 @@ class LetterAdmin(ImportExportModelAdmin):
     readonly_fields = (
         "created_date",
         "created_by",
+        "workflow_stage",
     )
     fields = (
         "person",
@@ -361,9 +410,12 @@ class LetterAdmin(ImportExportModelAdmin):
         if not letter.person.current_prison:
             return
         curr_prison = letter.person.current_prison
-        # TODO: this will probably insert another line break if no additional_mailing_headers, which there are not many; fix
+        if curr_prison.additional_mailing_headers:
+            return format_html(
+                f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.additional_mailing_headers}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
+            )
         return format_html(
-            f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.additional_mailing_headers}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
+            f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
         )
 
     prison_mailing_address.allow_tags = True
@@ -381,5 +433,5 @@ class LetterAdmin(ImportExportModelAdmin):
     def save_model(self, request, obj, form, change):
         if not obj.pk:
             obj.created_by = request.user
-        obj.modified_date = datetime.datetime.now()
+        obj.modified_date = datetime.now()
         super().save_model(request, obj, form, change)
