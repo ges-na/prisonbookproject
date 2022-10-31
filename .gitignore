@@ -4,3 +4,4 @@ org_data/*
 */__pycache__/*
 static/
 data/
+fly-pg-dump-to-s3/

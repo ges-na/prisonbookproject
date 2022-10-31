@@ -32,6 +32,11 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = ["https://prisonbookproject.fly.dev"]
 CORS_ALLOWED_ORIGINS = env.list("CORS_WHITELIST")
 CORS_ALLOW_CREDENTIALS = True
+SECRET_KEY = env("SECRET_KEY")
+
+# Database
+# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
+DATABASES = {"default": env.db()}
 
 # Application definition
 

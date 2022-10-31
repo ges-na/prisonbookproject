@@ -1,10 +1,6 @@
 from .settings import *
 import os
 
-SECRET_KEY = env("SECRET_KEY")
-
-DATABASES = {"default": env.db()}
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
