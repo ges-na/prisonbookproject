@@ -74,11 +74,11 @@ class PersonResource(resources.ModelResource):
     letter_count = Field(attribute="letter_count")
     # this causes legacy_last_served_date to be part of the export
     # even though it is probably confusing
-    # legacy_last_served_date = Field(
-    #     attribute="legacy_last_served_date",
-    #     column_name="legacy_last_served_date",
-    #     widget=widgets.DateTimeWidget("%Y-%m-%d %H:%M:%S.%f"),
-    # )
+    legacy_last_served_date = Field(
+        attribute="legacy_last_served_date",
+        column_name="legacy_last_served_date",
+        widget=widgets.DateTimeWidget(format="%Y-%m-%d %H:%M:%S"),
+    )
 
     class Meta:
         model = Person
@@ -88,7 +88,9 @@ class PersonResource(resources.ModelResource):
             "id",
             "inmate_number",
             "last_name",
+            "middle_name",
             "first_name",
+            "name_suffix",
             "status",
             "legacy_last_served_date",
             "legacy_prison_id",
@@ -103,7 +105,9 @@ class PersonResource(resources.ModelResource):
         export_order = (
             "id",
             "last_name",
+            "middle_name",
             "first_name",
+            "name_suffix",
             "status",
             "current_prison",
             "last_served",
@@ -113,6 +117,8 @@ class PersonResource(resources.ModelResource):
         )
 
     def after_save_instance(self, instance, using_transactions, dry_run):
+        if instance.legacy_prison_id is None:
+            return
         legacy_prison_id = instance.legacy_prison_id
         prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
         if not prison:
@@ -198,18 +204,17 @@ class PersonAdmin(ImportExportModelAdmin):
 
     form = PersonForm
 
-    def last_served_display(self, obj):
+    def last_served_date(self, obj):
         if obj.last_served:
             return obj.last_served.strftime("%Y-%m-%d")
 
     list_display = (
-        "id",
         "inmate_number",
         "last_name",
         "first_name",
         "eligibility",
         "status",
-        "last_served_display",
+        "last_served_date",
         "current_prison",
         "package_count",
         "pending_letter_count",
@@ -219,7 +224,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "modified_date",
     )
     readonly_fields = ("current_prison",)
-    # list_filter = ('prisons__prison',)
+    # list_filter = ("prisons__prison",)
     search_fields = (
         "inmate_number",
         "last_name",
@@ -228,7 +233,6 @@ class PersonAdmin(ImportExportModelAdmin):
     list_display_links = (
         "first_name",
         "last_name",
-        "id",
     )
     readonly_fields = (
         "created_by",
@@ -243,10 +247,10 @@ class PersonAdmin(ImportExportModelAdmin):
         "inmate_number",
         "eligibility",
         "last_name",
+        "middle_name",
         "first_name",
-        "package_count",
+        "name_suffix",
         "pending_letter_count",
-        "letter_count",
         "status",
     )
     actions = (manually_update_last_served_date,)
@@ -377,6 +381,7 @@ class LetterAdmin(ImportExportModelAdmin):
         "created_date",
         "created_by",
         "workflow_stage",
+        "stage1_complete_date",
     )
     fields = (
         "person",

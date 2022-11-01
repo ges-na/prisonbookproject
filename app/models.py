@@ -26,7 +26,9 @@ class Person(models.Model):
 
     inmate_number = models.CharField(max_length=50, unique=True)
     last_name = models.CharField(max_length=200)
+    middle_name = models.CharField(max_length=200, blank=True)
     first_name = models.CharField(max_length=200)
+    name_suffix = models.CharField(max_length=200, blank=True)
     legacy_prison_id = models.SmallIntegerField(null=True)
     legacy_last_served_date = models.DateTimeField(null=True, default=None)
     notes = models.CharField(max_length=500, blank=True)
@@ -145,6 +147,7 @@ class Prison(models.Model):
     class PrisonTypes(models.TextChoices):
         SCI = "sci", "SCI"
         FCI = "fci", "FCI"
+        USP = "usp", "USP"
         CITY = "city", "City"
         COUNTY = "county", "County"
         FDC = "fdc", "FDC"
