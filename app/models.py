@@ -6,6 +6,12 @@ from django.db import models
 from django.utils.timezone import make_aware, now
 
 
+class Eligibility(models.TextChoices):
+    ELIGIBLE = "eligible"
+    PENDING = "eligible, letters pending"
+    INELIGIBLE = "ineligible"
+
+
 class WorkflowStage(models.TextChoices):
     STAGE1_COMPLETE = "stage1_complete", "Stage 1 complete"
     AWAITING_FULFILLMENT = "awaiting_fulfillment", "Awaiting fulfillment"
@@ -33,6 +39,11 @@ class Person(models.Model):
     legacy_last_served_date = models.DateTimeField(null=True, default=None)
     notes = models.CharField(max_length=500, blank=True)
     status = models.CharField(max_length=200, choices=Statuses.choices, blank=True)
+    eligibility_status = models.CharField(
+        max_length=200,
+        choices=Eligibility.choices,
+        default=Eligibility.ELIGIBLE,
+    )
     created_date = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User,
@@ -79,31 +90,53 @@ class Person(models.Model):
     @property
     def eligibility(self):
         ninety_days_ago = make_aware((datetime.now() - timedelta(days=90)))
-
+        # If the person has never been served, they are eligible
+        ## and may have letters pending
         if not self.has_been_served:
             if not self.has_pending_letters:
+                self.eligibility_status = Eligibility.ELIGIBLE
+                self.save()
                 return "Eligible"
+            self.eligibility_status = Eligibility.PENDING
+            self.save()
             return f"Eligible, {self.pending_letter_count} letters pending"
+        # If the person was last served more than or exactly 90 days ago
+        ## (that is, ninety_days_ago is a "bigger" or more recent date)
+        ## they are eligible and may have letters pending
         elif self.last_served <= ninety_days_ago:
             if not self.has_pending_letters:
+                self.eligibility_status = Eligibility.ELIGIBLE
+                self.save()
                 return "Eligible"
             else:
+                self.eligibility_status = Eligibility.PENDING
+                self.save()
                 return f"Eligible, {self.pending_letter_count} letters pending"
-        elif date_last_fulfilled := self.letter_set.filter(
-            workflow_stage__in=[WorkflowStage.FULFILLED]
-        ):
-            last_fulfilled_date = (
-                date_last_fulfilled.order_by("fulfilled_date").first().fulfilled_date
-            )
-            eligible_date = last_fulfilled_date + timedelta(weeks=12)
+        # If the person was last served less than ninety days ago, they are ineligible
+        elif self.last_served > ninety_days_ago:
+            self.eligibility_status = Eligibility.INELIGIBLE
+            self.save()
+            eligible_date = self.last_served + timedelta(weeks=12)
             return f"Eligible after {eligible_date.strftime('%B %-d, %Y')}"
-        else:
-            eligibility_from_legacy_date = self.legacy_last_served_date + timedelta(
-                days=90
-            )
-            return (
-                f"Eligible after {eligibility_from_legacy_date.strftime('%B %-d, %Y')}"
-            )
+        # elif date_last_fulfilled := self.letter_set.filter(
+        #     workflow_stage__in=[WorkflowStage.FULFILLED]
+        # ):
+        #     self.eligibility_status = Eligibility.INELIGIBLE
+        #     self.save()
+        #     last_fulfilled_date = (
+        #         date_last_fulfilled.order_by("fulfilled_date").first().fulfilled_date
+        #     )
+        #     eligible_date = last_fulfilled_date + timedelta(weeks=12)
+        #     return f"Eligible after {eligible_date.strftime('%B %-d, %Y')}"
+        # else:
+        #     self.eligibility_status = Eligibility.INELIGIBLE
+        #     self.save()
+        #     eligibility_from_legacy_date = self.legacy_last_served_date + timedelta(
+        #         days=90
+        #     )
+        #     return (
+        #         f"Eligible after {eligibility_from_legacy_date.strftime('%B %-d, %Y')}"
+        #     )
 
     @property
     def package_count(self):
@@ -161,10 +194,10 @@ class Prison(models.Model):
     prison_type = models.CharField(max_length=200, choices=PrisonTypes.choices)
     legacy_address = models.CharField(max_length=200, blank=True)
     additional_mailing_headers = models.CharField(max_length=200, blank=True)
-    mailing_address = models.CharField(max_length=200, blank=True)
-    mailing_city = models.CharField(max_length=200, blank=True)
-    mailing_state = models.CharField(max_length=50, blank=True)
-    mailing_zipcode = models.CharField(max_length=200, blank=True)
+    mailing_address = models.CharField(max_length=200)
+    mailing_city = models.CharField(max_length=200)
+    mailing_state = models.CharField(max_length=50, default="PA")
+    mailing_zipcode = models.CharField(max_length=200)
     restrictions = models.CharField(max_length=200, blank=True)
     accepts_books = models.CharField(
         max_length=200, choices=[(True, "True"), (False, "False"), (None, "Unknown")]

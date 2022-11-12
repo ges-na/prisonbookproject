@@ -11,28 +11,30 @@ from import_export import resources, widgets
 from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 
-from .models import Letter, Person, PersonPrison, Prison, WorkflowStage
+from .models import Letter, Person, PersonPrison, Prison, WorkflowStage, Eligibility
 
 
-# probably only good for testing
+# probably only good for testing, might turn off later
 @admin.action(description="Mark selected letters as Stage 1 Complete")
 def move_to_stage1_complete(modeladmin, request, queryset):
     queryset.update(
-        awaiting_fulfillment_date=None,
+        # awaiting_fulfillment_date=None,
         fulfilled_date=None,
         workflow_stage=WorkflowStage.STAGE1_COMPLETE,
     )
+    for letter in queryset:
+        letter.person.save()
 
 
 # should this blank fulfilled_date?
-@admin.action(description="Mark selected letters as Awaiting Fulfillment")
-def move_to_awaiting_fulfillment(modeladmin, request, queryset):
-    now = make_aware(datetime.now())
-    queryset.update(
-        awaiting_fulfillment_date=now,
-        fulfilled_date=None,
-        workflow_stage=WorkflowStage.AWAITING_FULFILLMENT,
-    )
+# @admin.action(description="Mark selected letters as Awaiting Fulfillment")
+# def move_to_awaiting_fulfillment(modeladmin, request, queryset):
+#     now = make_aware(datetime.now())
+#     queryset.update(
+#         awaiting_fulfillment_date=now,
+#         fulfilled_date=None,
+#         workflow_stage=WorkflowStage.AWAITING_FULFILLMENT,
+#     )
 
 
 # TODO: currently, if you set this manually on form, it does not update last_served date;
@@ -40,10 +42,9 @@ def move_to_awaiting_fulfillment(modeladmin, request, queryset):
 @admin.action(description="Mark selected letters as Fulfilled")
 def move_to_fulfilled(modeladmin, request, queryset):
     now = datetime.now()
-    for obj in queryset:
-        obj.person.package_count + 1
-        obj.save()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
+    for letter in queryset:
+        letter.person.save()
 
 
 @admin.action(
@@ -52,6 +53,8 @@ def move_to_fulfilled(modeladmin, request, queryset):
 def manually_update_last_served_date(modeladmin, request, queryset):
     now = datetime.now()
     queryset.update(legacy_last_served_date=now)
+    for person in queryset:
+        person.save()
 
 
 # @admin.action(
@@ -170,6 +173,8 @@ class PersonPrisonInline(admin.TabularInline):
     model = PersonPrison
     extra = 0
     can_delete = False
+    verbose_name = "Prison"
+    verbose_name_plural = "Prisons"
     fields = ("prison", "current")
     form = PersonPrisonForm
 
@@ -198,10 +203,33 @@ class PersonForm(ModelForm):
         return self.cleaned_data["last_name"]
 
 
+# This might have some weird edge cases based on eligibility_status not updating properly
+class EligibilityListFilter(admin.SimpleListFilter):
+    title = "eligibility"
+    parameter_name = "eligibility_status"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("eligible", Eligibility.ELIGIBLE.capitalize()),
+            ("pending", Eligibility.PENDING.capitalize()),
+            ("ineligible", Eligibility.INELIGIBLE.capitalize()),
+        )
+
+    def queryset(self, request, queryset):
+
+        if self.value() == "eligible":
+            return queryset.filter(eligibility_status=Eligibility.ELIGIBLE)
+
+        if self.value() == "pending":
+            return queryset.filter(eligibility_status=Eligibility.PENDING)
+
+        if self.value() == "ineligible":
+            return queryset.filter(eligibility_status=Eligibility.INELIGIBLE)
+
+
 @admin.register(Person)
 class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
-
     form = PersonForm
 
     def last_served_date(self, obj):
@@ -224,7 +252,10 @@ class PersonAdmin(ImportExportModelAdmin):
         "modified_date",
     )
     readonly_fields = ("current_prison",)
-    # list_filter = ("prisons__prison",)
+    list_filter = (
+        # "prisons__prison",
+        EligibilityListFilter,
+    )
     search_fields = (
         "inmate_number",
         "last_name",
@@ -253,6 +284,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "pending_letter_count",
         "status",
     )
+    list_per_page = 25
     actions = (manually_update_last_served_date,)
     inlines = [PersonPrisonInline]
 
@@ -271,7 +303,8 @@ class PersonAdmin(ImportExportModelAdmin):
         if not person.pending_letter_count:
             return
         return format_html(
-            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.AWAITING_FULFILLMENT}>{person.pending_letter_count}</a>"
+            # f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.AWAITING_FULFILLMENT}>{person.pending_letter_count}</a>"
+            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE}>{person.pending_letter_count}</a>"
         )
 
     def letter_count(self, person):
@@ -331,6 +364,7 @@ class PrisonAdmin(ImportExportModelAdmin):
         "restrictions",
         "notes",
     )
+    list_per_page = 100
 
     def display_mailing_address(self, prison):
         if not prison.mailing_address:
@@ -362,7 +396,7 @@ class LetterAdmin(ImportExportModelAdmin):
         "workflow_stage",
         "postmark_date",
         "stage1_complete_date",
-        "awaiting_fulfillment_date",
+        # "awaiting_fulfillment_date",
         "fulfilled_date",
         "prison_mailing_address",
         "eligibility",
@@ -390,14 +424,15 @@ class LetterAdmin(ImportExportModelAdmin):
         "stage1_complete_date",
         "created_date",
     )
+    list_per_page = 100
     actions = (
-        move_to_awaiting_fulfillment,
+        # move_to_awaiting_fulfillment,
         move_to_fulfilled,
         move_to_stage1_complete,
     )
 
     def letter_name(self, letter):
-        return f"{letter.person.last_name}, {letter.person.first_name} - {letter.postmark_date}"
+        return f"{letter.person.inmate_number} | {letter.person.last_name}, {letter.person.first_name} - {letter.postmark_date}"
 
     def person_list_display(self, letter):
         if not letter.person:
@@ -409,6 +444,7 @@ class LetterAdmin(ImportExportModelAdmin):
         return format_html(f"<a href={link}>{letter.person.last_name}</a>")
 
     person_list_display.allow_tags = True
+    person_list_display.admin_order_field = "person__last_name"
     person_list_display.short_description = "Person"
 
     def prison_mailing_address(self, letter):
