@@ -20,6 +20,20 @@ class WorkflowStage(models.TextChoices):
     PROBLEM = "problem", "Problem"
 
 
+class PrisonTypes(models.TextChoices):
+    SCI = "sci", "SCI"
+    FCI = "fci", "FCI"
+    USP = "usp", "USP"
+    CITY = "city", "City"
+    COUNTY = "county", "County"
+    FDC = "fdc", "FDC"
+    IMMIGRATION_DETENTION = (
+        "immigration_detention",
+        "Immigration Detention Facility",
+    )
+    BOOT_CAMP = "boot_camp", "Boot Camp"
+
+
 class PersonManager(models.Manager):
     def get_queryset(self):
         pass
@@ -177,18 +191,6 @@ class Person(models.Model):
 
 
 class Prison(models.Model):
-    class PrisonTypes(models.TextChoices):
-        SCI = "sci", "SCI"
-        FCI = "fci", "FCI"
-        USP = "usp", "USP"
-        CITY = "city", "City"
-        COUNTY = "county", "County"
-        FDC = "fdc", "FDC"
-        tMMIGRATION_DETENTION = (
-            "immigration_detention",
-            "Immigration Detention Facility",
-        )
-        BOOT_CAMP = "boot_camp", "Boot Camp"
 
     name = models.CharField(max_length=200)
     prison_type = models.CharField(max_length=200, choices=PrisonTypes.choices)
@@ -230,7 +232,6 @@ class Letter(models.Model):
     stage1_complete_date = models.DateTimeField(null=True, blank=True, default=now)
     awaiting_fulfillment_date = models.DateTimeField(null=True, blank=True)
     fulfilled_date = models.DateTimeField(null=True, blank=True)
-    # change to choices
     workflow_stage = models.CharField(
         max_length=200,
         choices=WorkflowStage.choices,

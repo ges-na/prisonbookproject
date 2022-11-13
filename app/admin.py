@@ -11,7 +11,15 @@ from import_export import resources, widgets
 from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 
-from .models import Letter, Person, PersonPrison, Prison, WorkflowStage, Eligibility
+from .models import (
+    Letter,
+    Person,
+    PersonPrison,
+    Prison,
+    WorkflowStage,
+    Eligibility,
+    PrisonTypes,
+)
 
 
 # probably only good for testing, might turn off later
@@ -450,7 +458,13 @@ class LetterAdmin(ImportExportModelAdmin):
     def prison_mailing_address(self, letter):
         if not letter.person.current_prison:
             return
+        if letter.person.current_prison.prison_type == PrisonTypes.SCI:
+            return
         curr_prison = letter.person.current_prison
+        if curr_prison.prison_type == PrisonTypes.COUNTY or PrisonTypes.CITY:
+            return format_html(
+                f"{letter.person.first_name} {letter.person.last_name}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
+            )
         if curr_prison.additional_mailing_headers:
             return format_html(
                 f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.additional_mailing_headers}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
@@ -460,6 +474,7 @@ class LetterAdmin(ImportExportModelAdmin):
         )
 
     prison_mailing_address.allow_tags = True
+    prison_mailing_address.short_description = "Non-SCI address"
 
     def eligibility(self, letter):
         return letter.person.eligibility
