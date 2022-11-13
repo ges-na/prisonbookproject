@@ -461,7 +461,8 @@ class LetterAdmin(ImportExportModelAdmin):
         if letter.person.current_prison.prison_type == PrisonTypes.SCI:
             return
         curr_prison = letter.person.current_prison
-        if curr_prison.prison_type == PrisonTypes.COUNTY or PrisonTypes.CITY:
+        breakpoint()
+        if curr_prison.prison_type == (PrisonTypes.COUNTY or PrisonTypes.CITY):
             return format_html(
                 f"{letter.person.first_name} {letter.person.last_name}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
             )
