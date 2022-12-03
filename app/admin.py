@@ -17,7 +17,7 @@ from .models import (
     PersonPrison,
     Prison,
     WorkflowStage,
-    Eligibility,
+    # Eligibility,
     PrisonTypes,
 )
 
@@ -51,9 +51,6 @@ def move_to_stage1_complete(modeladmin, request, queryset):
 def move_to_fulfilled(modeladmin, request, queryset):
     now = datetime.now()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
-    for letter in queryset:
-        letter.person.eligibility_status = Eligibility.INELIGIBLE
-        letter.person.save()
 
 
 @admin.action(
@@ -212,28 +209,28 @@ class PersonForm(ModelForm):
         return self.cleaned_data["last_name"]
 
 
-# This might have some weird edge cases based on eligibility_status not updating properly
-class EligibilityListFilter(admin.SimpleListFilter):
-    title = "eligibility"
-    parameter_name = "eligibility_status"
+# # This might have some weird edge cases based on eligibility_status not updating properly
+# class EligibilityListFilter(admin.SimpleListFilter):
+#     title = "eligibility"
+#     parameter_name = "eligibility_status"
 
-    def lookups(self, request, model_admin):
-        return (
-            ("eligible", Eligibility.ELIGIBLE.capitalize()),
-            ("pending", Eligibility.PENDING.capitalize()),
-            ("ineligible", Eligibility.INELIGIBLE.capitalize()),
-        )
+#     def lookups(self, request, model_admin):
+#         return (
+#             ("eligible", Eligibility.ELIGIBLE.capitalize()),
+#             ("pending", Eligibility.PENDING.capitalize()),
+#             ("ineligible", Eligibility.INELIGIBLE.capitalize()),
+#         )
 
-    def queryset(self, request, queryset):
+#     def queryset(self, request, queryset):
 
-        if self.value() == "eligible":
-            return queryset.filter(eligibility_status=Eligibility.ELIGIBLE)
+#         if self.value() == "eligible":
+#             return queryset.filter(eligibility_status=Eligibility.ELIGIBLE)
 
-        if self.value() == "pending":
-            return queryset.filter(eligibility_status=Eligibility.PENDING)
+#         if self.value() == "pending":
+#             return queryset.filter(eligibility_status=Eligibility.PENDING)
 
-        if self.value() == "ineligible":
-            return queryset.filter(eligibility_status=Eligibility.INELIGIBLE)
+#         if self.value() == "ineligible":
+#             return queryset.filter(eligibility_status=Eligibility.INELIGIBLE)
 
 
 @admin.register(Person)
@@ -272,7 +269,7 @@ class PersonAdmin(ImportExportModelAdmin):
     )
     list_filter = (
         # "prisons__prison",
-        EligibilityListFilter,
+        # EligibilityListFilter,
     )
     search_fields = (
         "inmate_number",

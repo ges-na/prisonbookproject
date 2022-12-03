@@ -1,52 +1,49 @@
 import os
+from model_bakery import baker
+from datetime import datetime, timedelta
+from django.utils.timezone import make_aware, now
 
 from django.test import TestCase
-from django.contrib.auth.models import User
 
-from model_bakery import baker
+from app.models import *
+from app.admin import *
 
 
-class ImportTests(TestCase):
-
+class EligibilityTests(TestCase):
     def setUp(self):
-        self.admin_user = User.objects.create_superuser(username='admin')
-        self.admin_user.set_password('Password123')
-        self.admin_user.save()
-        self.client.login(username='admin', password='Password123')
+        self.now = make_aware(datetime.now())
+        self.person_with_legacy_ls_date = baker.make(
+            "app.Person",
+            legacy_last_served_date=self.now - timedelta(days=91),
+        )
+        self.person_without_legacy_ls_date = baker.make(
+            "app.Person",
+            legacy_last_served_date=None,
+        )
 
-    def test_import_file(self):
-        filename = os.path.join(
-            os.path.dirname(__file__),
-            'fixtures',
-            'test_test_db.csv')
-        with open(filename, "rb") as f:
-            data = {
-                    'input_format': 0,
-                    'import_file': f
-            }
-            self.response = self.client.post('/admin/app/person/import/', data)
-        self.assertIn('confirm_form', self.response.context)
-        data = self.response.context['confirm_form'].initial
-        self.confirm_response = self.client.post('/admin/app/person/process_import/', data, follow=True)
-        self.assertContains(self.response, '123')
+    def test_set_last_served_date(self):
+        letter_for_person_with_legacy_ls_date = baker.make(
+            "app.Letter",
+            person=self.person_with_legacy_ls_date,
+            fulfilled_date=self.now,
+            workflow_stage=WorkflowStage.FULFILLED,
+        )
+        letter_for_person_with_legacy_ls_date.save()
+        self.assertEqual(
+            len(
+                letter_for_person_with_legacy_ls_date.person.letter_set.filter(
+                    workflow_stage__in=[WorkflowStage.FULFILLED]
+                )
+            ),
+            1,
+        )
+        self.assertEqual(letter_for_person_with_legacy_ls_date.fulfilled_date, self.now)
+        self.assertEqual(
+            letter_for_person_with_legacy_ls_date.person.has_been_served, True
+        )
+        self.assertEqual(
+            letter_for_person_with_legacy_ls_date.person.last_served, self.now
+        )
 
-class ExportTests(TestCase):
-
-    def setUp(self):
-        self.person = baker.make('app.Person')
-        self.admin_user = User.objects.create_superuser(username='admin')
-        self.admin_user.set_password('Password123')
-        self.admin_user.save()
-        self.client.login(username='admin', password='Password123')
-
-    def test_admin_login(self):
-        self.response = self.client.get('/admin/')
-        self.assertEqual(self.response.status_code, 200)
-
-    def test_export_file(self):
-        self.response = self.client.post('/admin/app/person/export/', {'file_format': '0'})
-        self.assertContains(self.response, self.person.last_name)
-
-    def test_export_file_false(self):
-        self.response = self.client.post('/admin/app/person/export/', {'file_format': '0'})
-        self.assertNotContains(self.response, 'randomstring')
+    def test_eligibility(self):
+        pass
