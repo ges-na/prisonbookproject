@@ -52,6 +52,7 @@ def move_to_fulfilled(modeladmin, request, queryset):
     now = datetime.now()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
     for letter in queryset:
+        letter.person.eligibility_status = Eligibility.INELIGIBLE
         letter.person.save()
 
 
@@ -180,7 +181,7 @@ class PersonPrisonForm(ModelForm):
 class PersonPrisonInline(admin.TabularInline):
     model = PersonPrison
     extra = 0
-    can_delete = False
+    # can_delete = False
     verbose_name = "Prison"
     verbose_name_plural = "Prisons"
     fields = ("prison", "current")
@@ -259,7 +260,16 @@ class PersonAdmin(ImportExportModelAdmin):
         "created_date",
         "modified_date",
     )
-    readonly_fields = ("current_prison",)
+    readonly_fields = (
+        "current_prison",
+        "created_by",
+        "created_date",
+        "modified_date",
+        "eligibility",
+        "package_count",
+        "pending_letter_count",
+        "letter_count",
+    )
     list_filter = (
         # "prisons__prison",
         EligibilityListFilter,
@@ -273,15 +283,6 @@ class PersonAdmin(ImportExportModelAdmin):
         "first_name",
         "last_name",
     )
-    readonly_fields = (
-        "created_by",
-        "created_date",
-        "modified_date",
-        "eligibility",
-        "package_count",
-        "pending_letter_count",
-        "letter_count",
-    )
     fields = (
         "inmate_number",
         "eligibility",
@@ -291,6 +292,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "name_suffix",
         "pending_letter_count",
         "status",
+        "notes",
     )
     list_per_page = 25
     actions = (manually_update_last_served_date,)
@@ -461,7 +463,6 @@ class LetterAdmin(ImportExportModelAdmin):
         if letter.person.current_prison.prison_type == PrisonTypes.SCI:
             return
         curr_prison = letter.person.current_prison
-        breakpoint()
         if curr_prison.prison_type == (PrisonTypes.COUNTY or PrisonTypes.CITY):
             return format_html(
                 f"{letter.person.first_name} {letter.person.last_name}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
