@@ -356,12 +356,12 @@ class PrisonAdmin(ImportExportModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class LetterForm(ModelForm):
-    workflow_stage = CharField(choices=[WorkflowStage.IN_PACKING_PIPELINE])
+# class LetterForm(ModelForm):
+#     workflow_stage = CharField(choices=[WorkflowStage.IN_PACKING_PIPELINE])
 
-    class Meta:
-        model = Letter
-        fields = ["person", "postmark_date", "workflow_stage"]
+#     class Meta:
+#         model = Letter
+#         fields = ["person", "postmark_date", "workflow_stage"]
 
 
 @admin.register(Letter)
@@ -369,15 +369,16 @@ class LetterAdmin(ImportExportModelAdmin):
 
     list_display = (
         "letter_name",
-        "person_list_display",
         "workflow_stage",
         "postmark_date",
+        "eligibility",
+        "person_current_prison",
         "stage1_complete_date",
         "in_packing_pipeline_date",
         "fulfilled_date",
         "prison_sent_to_list_display",
         "prison_mailing_address",
-        "eligibility",
+        "person_list_display",
         "created_by",
         "created_date",
         "modified_date",
@@ -399,6 +400,7 @@ class LetterAdmin(ImportExportModelAdmin):
         "person",
         "postmark_date",
         "stage1_complete_date",
+        "notes",
     )
     actions = (
         move_to_in_packing_pipeline,
@@ -424,6 +426,9 @@ class LetterAdmin(ImportExportModelAdmin):
     person_list_display.allow_tags = True
     person_list_display.admin_order_field = "person__last_name"
     person_list_display.short_description = "Person"
+
+    def person_current_prison(self, letter):
+        return letter.person.current_prison
 
     def prison_sent_to_list_display(self, letter):
         if not letter.prison_sent_to:

@@ -17,6 +17,7 @@ class WorkflowStage(models.TextChoices):
     FULFILLED = "fulfilled", "Fulfilled"
     JUST_PADA = "just_pada", "Just PADA"
     PROBLEM = "problem", "Problem"
+    DISCARDED = "discarded", "Discarded"
 
 
 class PrisonTypes(models.TextChoices):
