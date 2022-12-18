@@ -376,7 +376,7 @@ class LetterAdmin(ImportExportModelAdmin):
         "stage1_complete_date",
         "in_packing_pipeline_date",
         "fulfilled_date",
-        "prison_sent_to_list_display",
+        # "prison_sent_to_list_display",
         "prison_mailing_address",
         "person_list_display",
         "created_by",
@@ -430,24 +430,25 @@ class LetterAdmin(ImportExportModelAdmin):
     def person_current_prison(self, letter):
         return letter.person.current_prison
 
-    def prison_sent_to_list_display(self, letter):
-        if not letter.prison_sent_to:
-            return
-        link = reverse(
-            "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
-        )
-        return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
+    # def prison_sent_to_list_display(self, letter):
+    #     if not letter.prison_sent_to:
+    #         return
+    #     link = reverse(
+    #         "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
+    #     )
+    #     return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
 
-    prison_sent_to_list_display.allow_tags = True
-    prison_sent_to_list_display.admin_order_field = "prison__name"
+    # prison_sent_to_list_display.allow_tags = True
+    # prison_sent_to_list_display.admin_order_field = "prison__name"
 
+    # TODO: this is so gross
     def prison_mailing_address(self, letter):
         if not letter.person.current_prison:
             return
         if letter.person.current_prison.prison_type == PrisonTypes.SCI:
             return
         curr_prison = letter.person.current_prison
-        # this suppresses county/city ID numbers, which is imperfect but accounts for constructed IDs
+        # this suppresses county/city ID numbers, which is imperfect but accounts for constructed IDs; however, some county prisons do have IDs
         if curr_prison.prison_type == (PrisonTypes.COUNTY or PrisonTypes.CITY):
             return format_html(
                 f"{letter.person.first_name} {letter.person.last_name}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
