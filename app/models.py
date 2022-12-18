@@ -3,18 +3,17 @@ from enum import Enum
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.timezone import make_aware, now
 
 
-# class Eligibility(models.TextChoices):
-#     ELIGIBLE = "eligible"
-#     PENDING = "eligible, letters pending"
-#     INELIGIBLE = "ineligible"
+ELIGIBILITY_INTERVAL = 90
 
 
 class WorkflowStage(models.TextChoices):
     STAGE1_COMPLETE = "stage1_complete", "Stage 1 complete"
-    AWAITING_FULFILLMENT = "awaiting_fulfillment", "Awaiting fulfillment"
+    IN_PACKING_PIPELINE = "in_packing_pipeline", "In packing pipeline"
     FULFILLED = "fulfilled", "Fulfilled"
     JUST_PADA = "just_pada", "Just PADA"
     PROBLEM = "problem", "Problem"
@@ -98,24 +97,35 @@ class Person(models.Model):
 
     @property
     def eligibility(self):
-        ninety_days_ago = make_aware((datetime.now() - timedelta(days=90)))
+        cooldown_interval = make_aware(
+            (datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL))
+        )
+        # this is gross and repetitive of pending_letter_count in admin.py
+        if self.has_pending_letters:
+            pending_eligibility = format_html(
+                f"Eligible, <a href={reverse('admin:app_letter_changelist')}?person={self.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.IN_PACKING_PIPELINE} target='_blank'>{self.pending_letter_count} letters pending</a>"
+            )
         # If the person has never been served, they are eligible
         ## and may have letters pending
         if not self.has_been_served:
             if not self.has_pending_letters:
                 return "Eligible"
-            return f"Eligible, {self.pending_letter_count} letters pending"
-        # If the person was last served more than or exactly 90 days ago
-        ## (that is, ninety_days_ago is a "bigger" or more recent date)
+            return pending_eligibility
+        # If the person was last served more than or exactly ELIGIBILITY_INTERVAL days ago
+        ## (that is, cooldown_interval is a "bigger" or more recent date)
         ## they are eligible and may have letters pending
-        elif self.last_served <= ninety_days_ago:
+        elif self.last_served <= cooldown_interval:
             if not self.has_pending_letters:
                 return "Eligible"
             else:
-                return f"Eligible, {self.pending_letter_count} letters pending"
-        # If the person was last served less than ninety days ago, they are ineligible
-        elif self.last_served > ninety_days_ago:
-            eligible_date = self.last_served + timedelta(days=90)
+                return pending_eligibility
+        # If the person was last served less than ELIGIBILITY_INTERVAL days ago, they are ineligible
+        elif self.last_served > cooldown_interval:
+            eligible_date = self.last_served + timedelta(days=ELIGIBILITY_INTERVAL)
+            if self.pending_letter_count >= 1:
+                return format_html(
+                    f"Eligible after {eligible_date.strftime('%B %-d, %Y')}; <a href={reverse('admin:app_letter_changelist')}?person={self.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.IN_PACKING_PIPELINE} target='_blank'>{self.pending_letter_count} letters pending</a>"
+                )
             return f"Eligible after {eligible_date.strftime('%B %-d, %Y')}"
 
     @property
@@ -129,7 +139,7 @@ class Person(models.Model):
         return self.letter_set.filter(
             workflow_stage__in=[
                 WorkflowStage.STAGE1_COMPLETE,
-                WorkflowStage.AWAITING_FULFILLMENT,
+                WorkflowStage.IN_PACKING_PIPELINE,
             ]
         ).count()
 
@@ -138,7 +148,7 @@ class Person(models.Model):
         return self.letter_set.filter(
             workflow_stage__in=[
                 WorkflowStage.STAGE1_COMPLETE,
-                WorkflowStage.AWAITING_FULFILLMENT,
+                WorkflowStage.IN_PACKING_PIPELINE,
             ]
         ).all()
 
@@ -191,13 +201,23 @@ class Prison(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ["name"]
+
 
 class Letter(models.Model):
     person = models.ForeignKey("Person", on_delete=models.CASCADE)
-    postmark_date = models.DateField(null=True, blank=True)
+    postmark_date = models.DateField(null=True, blank=True, default=now)
     stage1_complete_date = models.DateTimeField(null=True, blank=True, default=now)
-    awaiting_fulfillment_date = models.DateTimeField(null=True, blank=True)
+    in_packing_pipeline_date = models.DateTimeField(null=True, blank=True)
     fulfilled_date = models.DateTimeField(null=True, blank=True)
+    # TODO: this should probably have an on_delete.SET() argument that writes the prison name
+    prison_sent_to = models.ForeignKey(
+        "Prison",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
     workflow_stage = models.CharField(
         max_length=200,
         choices=WorkflowStage.choices,

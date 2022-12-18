@@ -3,7 +3,7 @@ from datetime import datetime
 from ajax_select import make_ajax_form
 from ajax_select.fields import autoselect_fields_check_can_add
 from django.contrib import admin
-from django.forms import ModelForm
+from django.forms import ModelForm, forms, BooleanField
 from django.urls import reverse
 from django.utils.timezone import make_aware
 from django.utils.html import format_html
@@ -17,7 +17,6 @@ from .models import (
     PersonPrison,
     Prison,
     WorkflowStage,
-    # Eligibility,
     PrisonTypes,
 )
 
@@ -26,41 +25,29 @@ from .models import (
 @admin.action(description="Mark selected letters as Stage 1 Complete")
 def move_to_stage1_complete(modeladmin, request, queryset):
     queryset.update(
-        # awaiting_fulfillment_date=None,
+        in_packing_pipeline_date=None,
         fulfilled_date=None,
         workflow_stage=WorkflowStage.STAGE1_COMPLETE,
     )
-    for letter in queryset:
-        letter.person.save()
 
 
-# should this blank fulfilled_date?
-# @admin.action(description="Mark selected letters as Awaiting Fulfillment")
-# def move_to_awaiting_fulfillment(modeladmin, request, queryset):
-#     now = make_aware(datetime.now())
-#     queryset.update(
-#         awaiting_fulfillment_date=now,
-#         fulfilled_date=None,
-#         workflow_stage=WorkflowStage.AWAITING_FULFILLMENT,
-#     )
+@admin.action(description="Mark selected letters as In Packing Pipeline")
+def move_to_in_packing_pipeline(modeladmin, request, queryset):
+    now = make_aware(datetime.now())
+    queryset.update(
+        in_packing_pipeline_date=now,
+        workflow_stage=WorkflowStage.IN_PACKING_PIPELINE,
+    )
 
 
-# TODO: currently, if you set this manually on form, it does not update last_served date;
 # turned off in form, only available via admin actions
 @admin.action(description="Mark selected letters as Fulfilled")
 def move_to_fulfilled(modeladmin, request, queryset):
     now = datetime.now()
+    for letter in queryset:
+        letter.prison_sent_to = letter.person.current_prison
+        letter.save()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
-
-
-@admin.action(
-    description="Manually update last served date for selected people if no letter exists"
-)
-def manually_update_last_served_date(modeladmin, request, queryset):
-    now = datetime.now()
-    queryset.update(legacy_last_served_date=now)
-    for person in queryset:
-        person.save()
 
 
 # @admin.action(
@@ -168,6 +155,7 @@ class PrisonResource(resources.ModelResource):
         )
 
 
+# TODO: check if still current
 class PersonPrisonForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(PersonPrisonForm, self).__init__(*args, **kwargs)
@@ -207,30 +195,6 @@ class PersonForm(ModelForm):
     def clean_last_name(self):
         self.cleaned_data["last_name"] = self.cleaned_data["last_name"].upper()
         return self.cleaned_data["last_name"]
-
-
-# # This might have some weird edge cases based on eligibility_status not updating properly
-# class EligibilityListFilter(admin.SimpleListFilter):
-#     title = "eligibility"
-#     parameter_name = "eligibility_status"
-
-#     def lookups(self, request, model_admin):
-#         return (
-#             ("eligible", Eligibility.ELIGIBLE.capitalize()),
-#             ("pending", Eligibility.PENDING.capitalize()),
-#             ("ineligible", Eligibility.INELIGIBLE.capitalize()),
-#         )
-
-#     def queryset(self, request, queryset):
-
-#         if self.value() == "eligible":
-#             return queryset.filter(eligibility_status=Eligibility.ELIGIBLE)
-
-#         if self.value() == "pending":
-#             return queryset.filter(eligibility_status=Eligibility.PENDING)
-
-#         if self.value() == "ineligible":
-#             return queryset.filter(eligibility_status=Eligibility.INELIGIBLE)
 
 
 @admin.register(Person)
@@ -292,7 +256,6 @@ class PersonAdmin(ImportExportModelAdmin):
         "notes",
     )
     list_per_page = 25
-    actions = (manually_update_last_served_date,)
     inlines = [PersonPrisonInline]
 
     def current_prison(self, person):
@@ -305,13 +268,13 @@ class PersonAdmin(ImportExportModelAdmin):
 
     current_prison.allow_tags = True
 
-    # This is fragile due to workflow_stage__in
+    # This is fragile due to workflow_stage__in, would be better
+    # to group "pending" workflow stages somehow globally
     def pending_letter_count(self, person):
         if not person.pending_letter_count:
             return
         return format_html(
-            # f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.AWAITING_FULFILLMENT}>{person.pending_letter_count}</a>"
-            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE}>{person.pending_letter_count}</a>"
+            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.IN_PACKING_PIPELINE} target='_blank'>{person.pending_letter_count}</a>"
         )
 
     def letter_count(self, person):
@@ -339,7 +302,6 @@ class PersonAdmin(ImportExportModelAdmin):
 class PrisonAdmin(ImportExportModelAdmin):
     resource_class = PrisonResource
 
-    # All mail goes through Security Processing Center, addresses suppressed
     list_display = (
         "id",
         "name",
@@ -371,7 +333,6 @@ class PrisonAdmin(ImportExportModelAdmin):
         "restrictions",
         "notes",
     )
-    list_per_page = 100
 
     def display_mailing_address(self, prison):
         if not prison.mailing_address:
@@ -395,23 +356,33 @@ class PrisonAdmin(ImportExportModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class LetterForm(ModelForm):
+    workflow_stage = CharField(choices=[WorkflowStage.IN_PACKING_PIPELINE])
+
+    class Meta:
+        model = Letter
+        fields = ["person", "postmark_date", "workflow_stage"]
+
+
 @admin.register(Letter)
 class LetterAdmin(ImportExportModelAdmin):
+
     list_display = (
         "letter_name",
         "person_list_display",
         "workflow_stage",
         "postmark_date",
         "stage1_complete_date",
-        # "awaiting_fulfillment_date",
+        "in_packing_pipeline_date",
         "fulfilled_date",
+        "prison_sent_to_list_display",
         "prison_mailing_address",
         "eligibility",
         "created_by",
         "created_date",
         "modified_date",
     )
-    list_filter = ("workflow_stage",)
+    list_filter = ("workflow_stage", "prison_sent_to")
     list_display_links = ("letter_name",)
     search_fields = (
         "person__last_name",
@@ -426,17 +397,17 @@ class LetterAdmin(ImportExportModelAdmin):
     )
     fields = (
         "person",
-        "workflow_stage",
         "postmark_date",
         "stage1_complete_date",
-        "created_date",
     )
-    list_per_page = 100
     actions = (
-        # move_to_awaiting_fulfillment,
+        move_to_in_packing_pipeline,
         move_to_fulfilled,
         move_to_stage1_complete,
     )
+
+    def check_to_keep_at_stage1_complete(self):
+        pass
 
     def letter_name(self, letter):
         return f"{letter.person.inmate_number} | {letter.person.last_name}, {letter.person.first_name} - {letter.postmark_date}"
@@ -454,12 +425,24 @@ class LetterAdmin(ImportExportModelAdmin):
     person_list_display.admin_order_field = "person__last_name"
     person_list_display.short_description = "Person"
 
+    def prison_sent_to_list_display(self, letter):
+        if not letter.prison_sent_to:
+            return
+        link = reverse(
+            "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
+        )
+        return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
+
+    prison_sent_to_list_display.allow_tags = True
+    prison_sent_to_list_display.admin_order_field = "prison__name"
+
     def prison_mailing_address(self, letter):
         if not letter.person.current_prison:
             return
         if letter.person.current_prison.prison_type == PrisonTypes.SCI:
             return
         curr_prison = letter.person.current_prison
+        # this suppresses county/city ID numbers, which is imperfect but accounts for constructed IDs
         if curr_prison.prison_type == (PrisonTypes.COUNTY or PrisonTypes.CITY):
             return format_html(
                 f"{letter.person.first_name} {letter.person.last_name}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
