@@ -25,18 +25,8 @@ from .models import (
 @admin.action(description="Mark selected letters as Stage 1 Complete")
 def move_to_stage1_complete(modeladmin, request, queryset):
     queryset.update(
-        in_packing_pipeline_date=None,
         fulfilled_date=None,
         workflow_stage=WorkflowStage.STAGE1_COMPLETE,
-    )
-
-
-@admin.action(description="Mark selected letters as In Packing Pipeline")
-def move_to_in_packing_pipeline(modeladmin, request, queryset):
-    now = make_aware(datetime.now())
-    queryset.update(
-        in_packing_pipeline_date=now,
-        workflow_stage=WorkflowStage.IN_PACKING_PIPELINE,
     )
 
 
@@ -119,19 +109,10 @@ class PersonResource(resources.ModelResource):
         prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
         if not prison:
             raise Exception(f"Prison with legacy id {legacy_prison_id} not found!")
-        existing = PersonPrison.objects.filter(
-            person_id=instance.id, prison_id=prison.id
-        ).first()
-        if existing and existing.current:
+        existing_records = PersonPrison.objects.filter(person_id=instance.id).count()
+        if existing_records > 0:
             return
-        elif existing:
-            existing.current = True
-            # PersonPrison.objects.filter(person_id=instance.id).update(current=False)
-            existing.save()
-            return
-        PersonPrison.objects.create(
-            person_id=instance.id, prison_id=prison.id, current=True
-        )
+        PersonPrison.objects.create(person_id=instance.id, prison_id=prison.id)
 
 
 class PrisonResource(resources.ModelResource):
@@ -155,21 +136,18 @@ class PrisonResource(resources.ModelResource):
         )
 
 
-# TODO: check if still current
 class PersonPrisonForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(PersonPrisonForm, self).__init__(*args, **kwargs)
-        if self.instance.pk:
-            self.fields["prison"].disabled = True
 
 
 class PersonPrisonInline(admin.TabularInline):
     model = PersonPrison
-    extra = 0
-    # can_delete = False
+    max_num = 1
+    can_delete = False
     verbose_name = "Prison"
     verbose_name_plural = "Prisons"
-    fields = ("prison", "current")
+    fields = ("prison",)
     form = PersonPrisonForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -178,6 +156,19 @@ class PersonPrisonInline(admin.TabularInline):
         return super(PersonPrisonInline, self).formfield_for_foreignkey(
             db_field, request, **kwargs
         )
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """
+        Override the formset function in order to remove the add and
+        change buttons beside the foreign key pull-down menus in the inline.
+        From: https://stackoverflow.com/a/37558444
+        """
+        formset = super(PersonPrisonInline, self).get_formset(request, obj, **kwargs)
+        form = formset.form
+        widget = form.base_fields["prison"].widget
+        widget.can_add_related = False
+        widget.can_change_related = False
+        return formset
 
 
 class PersonForm(ModelForm):
@@ -274,7 +265,7 @@ class PersonAdmin(ImportExportModelAdmin):
         if not person.pending_letter_count:
             return
         return format_html(
-            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE},{WorkflowStage.IN_PACKING_PIPELINE} target='_blank'>{person.pending_letter_count}</a>"
+            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE} target='_blank'>{person.pending_letter_count}</a>"
         )
 
     def letter_count(self, person):
@@ -356,14 +347,6 @@ class PrisonAdmin(ImportExportModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-# class LetterForm(ModelForm):
-#     workflow_stage = CharField(choices=[WorkflowStage.IN_PACKING_PIPELINE])
-
-#     class Meta:
-#         model = Letter
-#         fields = ["person", "postmark_date", "workflow_stage"]
-
-
 @admin.register(Letter)
 class LetterAdmin(ImportExportModelAdmin):
 
@@ -374,9 +357,8 @@ class LetterAdmin(ImportExportModelAdmin):
         "eligibility",
         "person_current_prison",
         "stage1_complete_date",
-        "in_packing_pipeline_date",
         "fulfilled_date",
-        # "prison_sent_to_list_display",
+        "prison_sent_to_list_display",
         "prison_mailing_address",
         "person_list_display",
         "created_by",
@@ -400,10 +382,10 @@ class LetterAdmin(ImportExportModelAdmin):
         "person",
         "postmark_date",
         "stage1_complete_date",
+        "counts_against_last_served",
         "notes",
     )
     actions = (
-        move_to_in_packing_pipeline,
         move_to_fulfilled,
         move_to_stage1_complete,
     )
@@ -430,16 +412,17 @@ class LetterAdmin(ImportExportModelAdmin):
     def person_current_prison(self, letter):
         return letter.person.current_prison
 
-    # def prison_sent_to_list_display(self, letter):
-    #     if not letter.prison_sent_to:
-    #         return
-    #     link = reverse(
-    #         "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
-    #     )
-    #     return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
+    def prison_sent_to_list_display(self, letter):
+        if not letter.prison_sent_to:
+            return
+        link = reverse(
+            "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
+        )
+        return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
 
-    # prison_sent_to_list_display.allow_tags = True
-    # prison_sent_to_list_display.admin_order_field = "prison__name"
+    prison_sent_to_list_display.allow_tags = True
+    prison_sent_to_list_display.admin_order_field = "prison__name"
+    prison_sent_to_list_display.short_description = "Prison Sent To"
 
     # TODO: this is so gross
     def prison_mailing_address(self, letter):
@@ -471,6 +454,9 @@ class LetterAdmin(ImportExportModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
+        form.base_fields[
+            "counts_against_last_served"
+        ].label = "Counts toward the person's last served date. (Only uncheck for survey response packages.)"
         autoselect_fields_check_can_add(form, self.model, request.user)
         return form
 
