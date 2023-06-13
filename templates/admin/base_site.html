@@ -1,9 +1,12 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
+{% block extrahead %}
+<link rel="icon" href="{% static 'admin/img/favicon.ico' %}" sizes="48x48" />
+{% endblock %}
 {% block branding %}
       <span id="logo">
         <a href="{% url 'admin:index' %}">
-          <img src="{% static 'admin/img/logo.png' %}" alt="My image" height="100px">
+          <img src="{% static 'admin/img/logo.png' %}" alt="PPBP Logo" height="100px">
         </a>
       </span>
     {{ block.super }}
