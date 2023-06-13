@@ -24,14 +24,14 @@ env = environ.Env(
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # False if not in os.environ because of casting above
-DEBUG = env('DEBUG')
+DEBUG = env("DEBUG")
 
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env("SECRET_KEY")
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
 CORS_ALLOWED_ORIGINS = env.list("CORS_WHITELIST")
 CORS_ALLOW_CREDENTIALS = True
@@ -39,58 +39,56 @@ CORS_ALLOW_CREDENTIALS = True
 # Application definition
 
 INSTALLED_APPS = [
-    'app.apps.AppConfig',
-    'corsheaders',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_extensions',
-    'ajax_select',
-    'import_export',
+    "app.apps.AppConfig",
+    "corsheaders",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_extensions",
+    "ajax_select",
+    "import_export",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'prisonbookproject.urls'
+ROOT_URLCONF = "prisonbookproject.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'prisonbookproject.wsgi.application'
+WSGI_APPLICATION = "prisonbookproject.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': env.db()
-}
+DATABASES = {"default": env.db()}
 
 
 # Password validation
@@ -98,16 +96,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -116,9 +114,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 # Change TIME_ZONE to local timezone
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'America/New_York'
+TIME_ZONE = "America/New_York"
 
 USE_I18N = True
 
@@ -127,13 +125,18 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
-
-root = environ.Path(__file__) - 2
-
-STATIC_URL = 'static/'
-STATIC_ROOT = root.path('static')
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block branding %}
+      <span id="logo">
+        <a href="{% url 'admin:index' %}">
+          <img src="{% static 'admin/img/logo.png' %}" alt="My image" height="100px">
+        </a>
+      </span>
+    {{ block.super }}
+{% endblock %}
