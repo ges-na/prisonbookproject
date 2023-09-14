@@ -259,8 +259,6 @@ class PersonAdmin(ImportExportModelAdmin):
 
     current_prison.allow_tags = True
 
-    # This is fragile due to workflow_stage__in, would be better
-    # to group "pending" workflow stages somehow globally
     def pending_letter_count(self, person):
         if not person.pending_letter_count:
             return
@@ -375,13 +373,13 @@ class LetterAdmin(ImportExportModelAdmin):
     readonly_fields = (
         "created_date",
         "created_by",
-        "workflow_stage",
         "stage1_complete_date",
     )
     fields = (
         "person",
         "postmark_date",
         "stage1_complete_date",
+        "workflow_stage",
         "counts_against_last_served",
         "notes",
     )
