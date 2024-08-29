@@ -31,6 +31,7 @@ class PrisonTypes(models.TextChoices):
         "Immigration Detention Facility",
     )
     BOOT_CAMP = "boot_camp", "Boot Camp"
+    REHAB_FACILITY = "rehab_facility", "Rehab Facility"
 
 
 class PersonManager(models.Manager):

@@ -354,6 +354,7 @@ class LetterAdmin(ImportExportModelAdmin):
         "postmark_date",
         "eligibility",
         "person_current_prison",
+        "restrictions",
         "stage1_complete_date",
         "fulfilled_date",
         "prison_sent_to_list_display",
@@ -409,6 +410,9 @@ class LetterAdmin(ImportExportModelAdmin):
 
     def person_current_prison(self, letter):
         return letter.person.current_prison
+
+    def restrictions(self, letter):
+        return letter.person.current_prison.restrictions
 
     def prison_sent_to_list_display(self, letter):
         if not letter.prison_sent_to:
