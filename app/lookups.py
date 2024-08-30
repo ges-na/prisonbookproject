@@ -18,7 +18,7 @@ class PersonLookup(LookupChannel):
         return f"<span class='person'>{person.inmate_number} - {person.last_name}, {person.first_name}</span>"
 
     def format_item_display(self, person):
-        return f"""
+        body = f"""
                 <div>
                 <a
                     id='{person.id}'
@@ -32,5 +32,9 @@ class PersonLookup(LookupChannel):
                 <div>
                 {person.inmate_number} - {person.last_name}, {person.first_name}</div>
                 <div>{person.current_prison}</div>
-                <div>{person.eligibility}</div>
-        """
+                """
+        restrictions = f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
+        eligibility = f"<div>{person.eligibility}</div>"
+        if person.current_prison.restrictions:
+            return body + restrictions + eligibility
+        return body + eligibility
