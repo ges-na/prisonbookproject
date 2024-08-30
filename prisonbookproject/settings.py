@@ -115,7 +115,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 # Change TIME_ZONE to local timezone
-# TODO: TZ info in database doesn't match admin site display (admin site fulfilled and stage1 dates are correct; postmark is not)
 
 LANGUAGE_CODE = "en-us"
 
