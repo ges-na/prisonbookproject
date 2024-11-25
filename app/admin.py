@@ -389,6 +389,8 @@ class LetterAdmin(ImportExportModelAdmin):
         move_to_stage1_complete,
     )
 
+    list_per_page = 50
+
     def check_to_keep_at_stage1_complete(self):
         pass
 
