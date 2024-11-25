@@ -412,7 +412,8 @@ class LetterAdmin(ImportExportModelAdmin):
         return letter.person.current_prison
 
     def restrictions(self, letter):
-        return letter.person.current_prison.restrictions
+        if letter.person.current_prison:
+            return letter.person.current_prison.restrictions
 
     def prison_sent_to_list_display(self, letter):
         if not letter.prison_sent_to:
