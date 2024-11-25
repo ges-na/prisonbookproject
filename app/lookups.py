@@ -33,8 +33,8 @@ class PersonLookup(LookupChannel):
                 {person.inmate_number} - {person.last_name}, {person.first_name}</div>
                 <div>{person.current_prison}</div>
                 """
-        restrictions = f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
         eligibility = f"<div>{person.eligibility}</div>"
-        if person.current_prison.restrictions:
+        if person.current_prison and person.current_prison.restrictions:
+            restrictions = f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
             return body + restrictions + eligibility
         return body + eligibility
