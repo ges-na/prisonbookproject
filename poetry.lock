@@ -308,6 +308,44 @@ Django = ">=3.2"
 tablib = {version = ">=3.0.0", extras = ["html", "ods", "xls", "xlsx", "yaml"]}
 
 [[package]]
+name = "django-stubs"
+version = "5.2.0"
+description = "Mypy stubs for Django"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "django_stubs-5.2.0-py3-none-any.whl", hash = "sha256:cd52da033489afc1357d6245f49e3cc57bf49015877253fb8efc6722ea3d2d2b"},
+    {file = "django_stubs-5.2.0.tar.gz", hash = "sha256:07e25c2d3cbff5be540227ff37719cc89f215dfaaaa5eb038a75b01bbfbb2722"},
+]
+
+[package.dependencies]
+asgiref = "*"
+django = "*"
+django-stubs-ext = ">=5.2.0"
+types-PyYAML = "*"
+typing-extensions = ">=4.11.0"
+
+[package.extras]
+compatible-mypy = ["mypy (>=1.13,<1.16)"]
+oracle = ["oracledb"]
+redis = ["redis"]
+
+[[package]]
+name = "django-stubs-ext"
+version = "5.2.0"
+description = "Monkey-patching and extensions for django-stubs"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "django_stubs_ext-5.2.0-py3-none-any.whl", hash = "sha256:b27ae0aab970af4894ba4e9b3fcd3e03421dc8731516669659ee56122d148b23"},
+    {file = "django_stubs_ext-5.2.0.tar.gz", hash = "sha256:00c4ae307b538f5643af761a914c3f8e4e3f25f4e7c6d7098f1906c0d8f2aac9"},
+]
+
+[package.dependencies]
+django = "*"
+typing-extensions = "*"
+
+[[package]]
 name = "et-xmlfile"
 version = "2.0.0"
 description = "An implementation of lxml.xmlfile for the standard library"
@@ -946,6 +984,17 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,<8.2)", "pytest-mock", "pytest-mypy-testing"]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.20250402"
+description = "Typing stubs for PyYAML"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_pyyaml-6.0.12.20250402-py3-none-any.whl", hash = "sha256:652348fa9e7a203d4b0d21066dfb00760d3cbd5a15ebb7cf8d33c88a49546681"},
+    {file = "types_pyyaml-6.0.12.20250402.tar.gz", hash = "sha256:d7c13c3e6d335b6af4b0122a01ff1d270aba84ab96d1a1a1063ecba3e13ec075"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.13.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1039,4 +1088,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "5e3917d1f2066c8f0845fcd5bf6c4bfeaa443bdd242873b35ac92c4bb34a7f71"
+content-hash = "94f6d2cea5dc9387bd2905f74bfe32e111b4fcd43284923ba1f693b28aaf1783"

@@ -41,6 +41,7 @@ class Person(models.Model):
     )
     modified_date = models.DateTimeField(auto_now=True)
 
+    id: int
     prisons: QuerySet[PersonPrison]
     letter_set: QuerySet[Letter]
 
@@ -61,7 +62,8 @@ class Person(models.Model):
             workflow_stage=WorkflowStage.FULFILLED,
             counts_against_last_served=True,
         ):
-            return fulfilled_letters.order_by("fulfilled_date").last().fulfilled_date
+            if last_letter := fulfilled_letters.order_by("fulfilled_date").last():
+                return last_letter.fulfilled_date
         return
 
     @property
