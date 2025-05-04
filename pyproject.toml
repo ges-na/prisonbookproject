@@ -5,7 +5,7 @@ description = ""
 authors = ["ges-na <gesinaface@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 django-environ = "^0.8.1"
 Django = "^4.0.4"
 # psycopg2 = "^2.9.3"
@@ -23,6 +23,36 @@ requests = "^2.28.1"
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 
+[tool.poetry.group.dev.dependencies]
+pyright = "^1.1.400"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+include = ["app/*", "auth/*", "prisonbookproject/*", "tests/"]
+exclude = [
+    "README.md",
+    ".venv",
+]
+useLibraryCodeForTypes = true
+reportIncompatibleVariableOverride = false
+reportIncompatibleMethodOverride = false
+venvPath = "."
+venv = ".venv"
+stubPath = ""
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-safe-fixes = ["I"]
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+split-on-trailing-comma = true
+combine-as-imports = true
+known-third-party = ["django","django.contrib","django.utils"]

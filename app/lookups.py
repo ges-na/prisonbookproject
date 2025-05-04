@@ -1,6 +1,7 @@
+from ajax_select import LookupChannel, register
 from django.db.models import Q
-from ajax_select import register, LookupChannel
-from .models import Person
+
+from app.models.person import Person
 
 
 @register("person")
@@ -35,6 +36,8 @@ class PersonLookup(LookupChannel):
                 """
         eligibility = f"<div>{person.eligibility}</div>"
         if person.current_prison and person.current_prison.restrictions:
-            restrictions = f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
+            restrictions = (
+                f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
+            )
             return body + restrictions + eligibility
         return body + eligibility
