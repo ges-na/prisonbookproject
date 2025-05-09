@@ -7,10 +7,10 @@ from django.urls import reverse
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
-from app.models.letter import Letter
-from app.models.person import WorkflowStage
-from app.models.prison import Prison
-from app.utils import render_address_template
+from src.app.models.letter import Letter
+from src.app.models.person import WorkflowStage
+from src.app.models.prison import Prison
+from src.app.utils import render_address_template
 
 
 # probably only good for testing, might turn off later

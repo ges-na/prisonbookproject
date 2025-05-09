@@ -42,7 +42,9 @@ DATABASES = {"default": env.db()}
 # Application definition
 
 INSTALLED_APPS = [
-    "app.apps.AppConfig",
+    "src.app.apps.AppConfig",
+    "src.viz.apps.AppConfig",
+    "src.auth.apps.AppConfig",
     "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -68,7 +70,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "prisonbookproject.urls"
+ROOT_URLCONF = "src.prisonbookproject.urls"
 
 TEMPLATES = [
     {
@@ -86,7 +88,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "prisonbookproject.wsgi.application"
+WSGI_APPLICATION = "src.prisonbookproject.wsgi.application"
 
 
 # Database

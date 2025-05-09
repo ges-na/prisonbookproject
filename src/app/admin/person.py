@@ -6,9 +6,9 @@ from import_export import resources, widgets
 from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 
-from app.models.person import Person
-from app.models.prison import PersonPrison, Prison
-from app.utils import WorkflowStage
+from src.app.models.person import Person
+from src.app.models.prison import PersonPrison, Prison
+from src.app.utils import WorkflowStage
 
 
 class PersonResource(resources.ModelResource):

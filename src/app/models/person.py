@@ -11,11 +11,11 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 
-from app.utils import WorkflowStage
+from src.app.utils import WorkflowStage
 
 if TYPE_CHECKING:
-    from app.models.letter import Letter
-    from app.models.prison import PersonPrison, Prison
+    from src.app.models.letter import Letter
+    from src.app.models.prison import PersonPrison, Prison
 
 ELIGIBILITY_INTERVAL_DAYS = 90
 

@@ -2,7 +2,7 @@
 *.pyc
 org_data/*
 */__pycache__/*
-static/
+staticfiles/
 data/
 fly-pg-dump-to-s3/
 node_modules/

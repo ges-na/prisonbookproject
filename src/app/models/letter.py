@@ -6,10 +6,10 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
-from app.utils import WorkflowStage
+from src.app.utils import WorkflowStage
 
 if TYPE_CHECKING:
-    from app.models.person import Person
+    from src.app.models.person import Person
 
 
 class Letter(models.Model):

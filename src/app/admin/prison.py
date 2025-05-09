@@ -1,12 +1,8 @@
-from django.contrib import admin
-from django.shortcuts import render
-from django.template.loader import render_to_string
-from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from app.models.prison import Prison
-from app.utils import render_address_template
+from src.app.models.prison import Prison
+from src.app.utils import render_address_template
 
 
 class PrisonResource(resources.ModelResource):

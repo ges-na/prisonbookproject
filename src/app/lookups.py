@@ -1,7 +1,7 @@
 from ajax_select import LookupChannel, register
 from django.db.models import Q
 
-from app.models.person import Person
+from src.app.models.person import Person
 
 
 @register("person")

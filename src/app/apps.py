@@ -1,7 +1,7 @@
-from django.apps import AppConfig
+from django.apps import AppConfig as DjAppConf
 
 
-class AppConfig(AppConfig):
+class AppConfig(DjAppConf):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "app"
+    name = "src.app"
     verbose_name = "Letter Processing"
