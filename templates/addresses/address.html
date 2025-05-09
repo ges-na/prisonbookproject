@@ -1,0 +1,9 @@
+<div style="display: flex; flex-direction: column; flex-gap: 4px;">
+  {% for header in headers %}{% if header %}<span>{{header}}</span>{% endif %}{% endfor %}
+  <span>{{address}}</span>
+  <span>
+    <span>{{city}}, </span>
+    <span>{{state}} </span>
+    <span>{{zip}}</span>
+  </span>
+</div>
