@@ -14,7 +14,7 @@ from app.utils import WorkflowStage
 class PersonResource(resources.ModelResource):
     current_prison = Field(attribute="current_prison")
     last_served = Field(attribute="last_served")
-    eligibility = Field(attribute="eligibility")
+    eligible = Field(attribute="eligible")
     package_count = Field(attribute="package_count")
     letter_count = Field(attribute="letter_count")
     # this causes legacy_last_served_date to be part of the export
@@ -43,7 +43,7 @@ class PersonResource(resources.ModelResource):
         readonly_fields = (
             "current_prison",
             "last_served",
-            "eligibility",
+            "get_eligibility_str",
             "letter_count",
             "package_count",
         )
@@ -56,7 +56,7 @@ class PersonResource(resources.ModelResource):
             "status",
             "current_prison",
             "last_served",
-            "eligibility",
+            "eligible",
             "letter_count",
             "package_count",
         )
@@ -129,6 +129,7 @@ class PersonCreateForm(PersonAdminForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        assert cleaned_data  # make pyright happy
         inmate_number = cleaned_data.get("inmate_number", "")
         did_not = cleaned_data.get("did_not_include_inmate_number", False)
         if not inmate_number and not did_not:
@@ -175,8 +176,6 @@ class PersonPrisonInline(admin.TabularInline):
         return formset
 
 
-# TODO REFACTOR: create form needs "no id sent" checkbox which allows null person_id field
-# and auto generates one for them
 class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
 
@@ -188,7 +187,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "inmate_number",
         "last_name",
         "first_name",
-        "eligibility",
+        "get_eligibility_str",
         "status",
         "last_served_date",
         "current_prison",
@@ -204,7 +203,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "created_by",
         "created_date",
         "modified_date",
-        "eligibility",
+        "get_eligibility_str",
         "package_count",
         "pending_letter_count",
         "letter_count",
@@ -242,29 +241,40 @@ class PersonAdmin(ImportExportModelAdmin):
         link = reverse(
             "admin:app_prison_change", kwargs={"object_id": person.current_prison.id}
         )
-        return format_html(f"<a href={link}>{person.current_prison.name}</a>")
+        return format_html("<a href={}>{}</a>", link, person.current_prison.name)
 
-    current_prison.allow_tags = True
+    setattr(current_prison, "allow_tags", True)
 
     def pending_letter_count(self, person):
         if not person.pending_letter_count:
             return
         return format_html(
-            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE} target='_blank'>{person.pending_letter_count}</a>"
+            "<a href={}?person={}&workflow_stage={} target='_blank'>{}</a>",
+            reverse("admin:app_letter_changelist"),
+            person.id,
+            WorkflowStage.STAGE1_COMPLETE,
+            person.pending_letter_count,
         )
 
     def letter_count(self, person):
         if not person.letter_count:
             return
         return format_html(
-            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}>{person.letter_count}</a>"
+            "<a href={}?person={}>{}</a>",
+            reverse("admin:app_letter_changelist"),
+            person.id,
+            person.letter_count,
         )
 
     def package_count(self, person):
         if not person.package_count:
             return
         return format_html(
-            f"<a href={reverse('admin:app_letter_changelist')}?person={person.id}&workflow_stage__in={WorkflowStage.FULFILLED}>{person.package_count}</a>"
+            "<a href={}?person={}&workflow_stage__in={}>{}</a>",
+            reverse("admin:app_letter_changelist"),
+            person.id,
+            WorkflowStage.FULFILLED,
+            person.package_count,
         )
 
     def save_model(self, request, obj, form, change):

@@ -28,7 +28,7 @@ class Prison(models.Model):
     mailing_state = models.CharField(max_length=50, default="PA")
     mailing_zipcode = models.CharField(max_length=200)
     restrictions = models.TextField(blank=True)
-    # TODO: REFACTOR (Field Type Change from CharField)
+    # TODO: FEATURE (Field Type Change from CharField)
     accepts_books = models.BooleanField(default=True)
     legacy_id = models.CharField(max_length=50, blank=True)
     notes = models.TextField(blank=True)
@@ -46,6 +46,8 @@ class Prison(models.Model):
         related_name="prison_modified_by_user",
         on_delete=models.SET_NULL,
     )
+
+    id: int
 
     def __str__(self):
         return self.name

@@ -7,7 +7,7 @@ authors = ["ges-na <gesinaface@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.12"
 django-environ = "^0.8.1"
-Django = "^4.0.4"
+Django = "^5.2.1"
 # psycopg2 = "^2.9.3"
 django-extensions = "^3.1.5"
 django-import-export = "^2.8.0"

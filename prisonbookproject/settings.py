@@ -9,9 +9,10 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import environ
 import os
 from pathlib import Path
+
+import environ
 
 # encir
 env = environ.Env(
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     "ajax_select",
     "import_export",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

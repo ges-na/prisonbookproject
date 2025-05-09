@@ -1,9 +1,12 @@
 from django.contrib import admin
+from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
 from app.models.prison import Prison
+from app.utils import render_address_template
 
 
 class PrisonResource(resources.ModelResource):
@@ -62,19 +65,20 @@ class PrisonAdmin(ImportExportModelAdmin):
         "notes",
     )
 
-    def display_mailing_address(self, prison):
-        if not prison.mailing_address:
-            return
+    def display_mailing_address(self, prison: Prison):
+        headers = [prison.name]
         if prison.additional_mailing_headers:
-            return format_html(
-                f"{prison.name}<br/>{prison.additional_mailing_headers}<br/>{prison.mailing_address}<br/>{prison.mailing_city}, {prison.mailing_state} {prison.mailing_zipcode}"
-            )
-        return format_html(
-            f"{prison.name}<br/>{prison.mailing_address}<br/>{prison.mailing_city}, {prison.mailing_state} {prison.mailing_zipcode}"
+            headers.append(prison.additional_mailing_headers)
+        return render_address_template(
+            headers,
+            prison.mailing_address,
+            prison.mailing_city,
+            prison.mailing_state,
+            prison.mailing_zipcode,
         )
 
-    display_mailing_address.allow_tags = True
-    display_mailing_address.short_description = "Mailing Address"
+    setattr(display_mailing_address, "allow_tags", True)
+    setattr(display_mailing_address, "short_description", "Mailing Address")
 
     def save_model(self, request, obj, form, change):
         if not obj.pk:

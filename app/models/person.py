@@ -51,6 +51,11 @@ class Person(models.Model):
     def __str__(self):
         return self.last_name
 
+    def save(self, *args, **kwargs):
+        if self.inmate_number == "":
+            self.inmate_number = None
+        super().save(*args, **kwargs)
+
     @property
     def current_prison(self) -> Prison | None:
         if person_prison := self.prisons.first():
@@ -98,49 +103,34 @@ class Person(models.Model):
     def letter_count(self):
         return self.all_letters.count()
 
-    def save(self, *args, **kwargs):
-        if self.inmate_number == "":
-            self.inmate_number = None
-        super().save(*args, **kwargs)
+    def get_name_str(self):
+        return f"{self.first_name} {self.middle_name + " " if self.middle_name else ""}{self.last_name}{" " + self.name_suffix if self.name_suffix else ""}"
 
-    # TODO: REFACTOR
-    # this is gross and repetitive of pending_letter_count in admin.py
     @property
-    def eligibility(self):
+    def eligible(self) -> bool:
+        if not self.has_been_served:
+            return True
+        assert self.last_served
         cooldown_interval = make_aware(
             (datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS))
         )
+        return self.last_served <= cooldown_interval
 
+    def get_eligibility_str(self) -> str:
         if self.has_pending_letters:
             pending_letters_string = format_html(
-                f"<a href={reverse('admin:app_letter_changelist')}?person={self.id}&workflow_stage__in={WorkflowStage.STAGE1_COMPLETE}>{self.pending_letter_count} letters pending</a>"
+                "<a href={}?person={}&workflow_stage__in={}>{}</a>",
+                reverse('admin:app_letter_changelist'),
+                self.id,
+                WorkflowStage.STAGE1_COMPLETE,
+                f"{self.pending_letter_count} letters pending",
             )
-
-        # If the person has never been served, they are eligible
-        ## and may have letters pending
-        if not self.has_been_served:
+        else:
+            pending_letters_string = ""
+        if not self.eligible:
+            assert self.last_served
+            eligible_dt = self.last_served + timedelta(days=ELIGIBILITY_INTERVAL_DAYS)
+            eligible_date_str = eligible_dt.strftime('%B %-d, %Y')
             if not self.has_pending_letters:
-                return "Eligible"
-            return format_html(f"Eligible; {pending_letters_string}")
-
-        assert self.last_served
-        eligible_date = self.last_served + timedelta(days=ELIGIBILITY_INTERVAL_DAYS)
-
-        # If the person was last served less than ELIGIBILITY_INTERVAL days ago,
-        ## they are ineligible but may have letters pending
-        if self.last_served > cooldown_interval:
-            if not self.has_pending_letters:
-                return format_html(
-                    f"Eligible after {eligible_date.strftime('%B %-d, %Y')}"
-                )
-            return format_html(
-                f"Eligible after {eligible_date.strftime('%B %-d, %Y')}; {pending_letters_string}"
-            )
-
-        # If the person was last served more than or exactly ELIGIBILITY_INTERVAL days ago
-        ## (that is, cooldown_interval is a "bigger" or more recent date)
-        ## they are eligible and may have letters pending
-        elif self.last_served <= cooldown_interval:
-            if not self.has_pending_letters:
-                return "Eligible"
-            return format_html(f"Eligible; {pending_letters_string}")
+                return f"Eligible after {eligible_date_str}{"; " + pending_letters_string if pending_letters_string else ""}"
+        return f"Eligible{"; " + pending_letters_string if pending_letters_string else ""}"

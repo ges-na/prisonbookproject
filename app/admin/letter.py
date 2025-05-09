@@ -10,6 +10,7 @@ from import_export.admin import ImportExportModelAdmin
 from app.models.letter import Letter
 from app.models.person import WorkflowStage
 from app.models.prison import Prison
+from app.utils import render_address_template
 
 
 # probably only good for testing, might turn off later
@@ -93,9 +94,9 @@ class LetterAdmin(ImportExportModelAdmin):
         )
         return format_html(f"<a href={link}>{letter.person.last_name}</a>")
 
-    person_list_display.allow_tags = True
-    person_list_display.admin_order_field = "person__last_name"
-    person_list_display.short_description = "Person"
+    setattr(person_list_display, "allow_tags", True)
+    setattr(person_list_display, "admin_order_field", "person__last_name")
+    setattr(person_list_display, "short_description", "Person")
 
     def person_current_prison(self, letter) -> Prison | None:
         return letter.person.current_prison if letter.person else None
@@ -114,35 +115,43 @@ class LetterAdmin(ImportExportModelAdmin):
         )
         return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
 
-    prison_sent_to_list_display.allow_tags = True
-    prison_sent_to_list_display.admin_order_field = "prison__name"
-    prison_sent_to_list_display.short_description = "Prison Sent To"
+    setattr(prison_sent_to_list_display, "allow_tags", True)
+    setattr(prison_sent_to_list_display, "allow_tags", "prison__name")
+    setattr(prison_sent_to_list_display, "allow_tags", "Prison Sent To")
 
-    # TODO: this is so gross
-    def prison_mailing_address(self, letter):
+    def prison_mailing_address(self, letter: Letter):
         if not letter.person or not letter.person.current_prison:
             return
         if letter.person.current_prison.prison_type == Prison.Types.SCI:
             return
         curr_prison = letter.person.current_prison
-        # this suppresses county/city ID numbers, which is imperfect but accounts for constructed IDs; however, some county prisons do have IDs
+        # this suppresses county/city ID numbers (which may be incorrect)
+        # unhandled case: some county prisoners do have correct IDs
         if curr_prison.prison_type in (Prison.Types.COUNTY, Prison.Types.CITY):
-            return format_html(
-                f"{letter.person.first_name} {letter.person.last_name}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
-            )
+            inmate_number = None
+        else:
+            inmate_number = letter.person.inmate_number
+
+        headers = [
+            letter.person.get_name_str(),
+            inmate_number,
+            curr_prison.name,
+        ]
         if curr_prison.additional_mailing_headers:
-            return format_html(
-                f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.additional_mailing_headers}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
-            )
-        return format_html(
-            f"{letter.person.first_name} {letter.person.last_name}<br/>{letter.person.inmate_number}<br/>{curr_prison.name}<br/>{curr_prison.mailing_address}<br/>{curr_prison.mailing_city}, {curr_prison.mailing_state} {curr_prison.mailing_zipcode}"
+            headers.append(curr_prison.additional_mailing_headers)
+        return render_address_template(
+            headers,
+            curr_prison.mailing_address,
+            curr_prison.mailing_city,
+            curr_prison.mailing_state,
+            curr_prison.mailing_zipcode,
         )
 
-    prison_mailing_address.allow_tags = True
-    prison_mailing_address.short_description = "Non-SCI address"
+    setattr(prison_mailing_address, "allow_tags", True)
+    setattr(prison_mailing_address, "allow_tags", "Non-SCI address")
 
     def eligibility(self, letter: Letter) -> bool:
-        return letter.person.eligibility if letter.person else False
+        return letter.person.eligible if letter.person else False
 
     form = make_ajax_form(Letter, {"person": "person"})
 

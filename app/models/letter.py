@@ -1,12 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
 from app.utils import WorkflowStage
 
+if TYPE_CHECKING:
+    from app.models.person import Person
+
 
 class Letter(models.Model):
-    person = models.ForeignKey(
+    person: models.ForeignKey[Person | None] = models.ForeignKey(
         "Person", on_delete=models.SET_NULL, null=True, blank=False
     )
     postmark_date = models.DateField(null=True, blank=True, default=now)
