@@ -243,8 +243,6 @@ class PersonAdmin(ImportExportModelAdmin):
         )
         return format_html("<a href={}>{}</a>", link, person.current_prison.name)
 
-    setattr(current_prison, "allow_tags", True)
-
     def pending_letter_count(self, person):
         if not person.pending_letter_count:
             return

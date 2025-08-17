@@ -73,7 +73,6 @@ class PrisonAdmin(ImportExportModelAdmin):
             prison.mailing_zipcode,
         )
 
-    setattr(display_mailing_address, "allow_tags", True)
     setattr(display_mailing_address, "short_description", "Mailing Address")
 
     def save_model(self, request, obj, form, change):

@@ -117,6 +117,7 @@ class Person(models.Model):
         return self.last_served <= cooldown_interval
 
     def get_eligibility_str(self) -> str:
+        pending_letters_string = None
         if self.has_pending_letters:
             pending_letters_string = format_html(
                 "<a href={}?person={}&workflow_stage__in={}>{}</a>",
@@ -125,12 +126,19 @@ class Person(models.Model):
                 WorkflowStage.STAGE1_COMPLETE,
                 f"{self.pending_letter_count} letters pending",
             )
-        else:
-            pending_letters_string = ""
         if not self.eligible:
             assert self.last_served
             eligible_dt = self.last_served + timedelta(days=ELIGIBILITY_INTERVAL_DAYS)
             eligible_date_str = eligible_dt.strftime('%B %-d, %Y')
             if not self.has_pending_letters:
-                return f"Eligible after {eligible_date_str}{"; " + pending_letters_string if pending_letters_string else ""}"
-        return f"Eligible{"; " + pending_letters_string if pending_letters_string else ""}"
+                return f"Eligible after {eligible_date_str}"
+            elif pending_letters_string:
+                return format_html("Eligible after {}; {}", eligible_date_str, pending_letters_string)
+            else:
+                # Should not happen, doesn't need to blow up
+                return "Error finding eligibility; please report"
+        if not pending_letters_string:
+            return "Eligible"
+        return format_html("Eligible; {}", pending_letters_string)
+
+    setattr(get_eligibility_str, "short_description", "Eligibility")

@@ -9,16 +9,10 @@
 
 #nav-sidebar,  button.toggle-nav-sidebar {
     --body-bg: var(--black);
-    --body-fg: #dafbd9;
-    --primary-fg: #dafbd9;
 }
 
 #nav-sidebar {
     --header-color: var(--pale-green);
-}
-
-#nav-sidebar .current-app {
-  color: #dafbd9;
 }
 
 #nav-sidebar .current-model {
@@ -85,7 +79,7 @@ div.breadcrumbs a:focus, div.breadcrumbs a:hover {
 }
 
 .button, input[type=submit], input[type=button], .submit-row input, a.button {
-    background: #dafbd9;
+    background: var(--bright-green);
 }
 .button:hover, input[type=submit]:hover, input[type=button]:hover {
     background: #878787;
@@ -97,19 +91,6 @@ div.breadcrumbs a:focus, div.breadcrumbs a:hover {
 #user-tools a:focus, #user-tools a:hover {
     border: 0;
     color: #ddd;
-}
-
-.selector-chosen h2 {
-    background: #dafbd9 !important;
-}
-
-.calendar td.selected a {
-    background: #dafbd9 !important;
-}
-
-.calendar td a:focus, .timelist a:focus,
-.calendar td a:hover, .timelist a:hover {
-    background: #dafbd9 !important;
 }
 
 #changelist-filter li.selected a {

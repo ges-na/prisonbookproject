@@ -92,9 +92,8 @@ class LetterAdmin(ImportExportModelAdmin):
         link = reverse(
             "admin:app_person_change", kwargs={"object_id": letter.person.id}
         )
-        return format_html(f"<a href={link}>{letter.person.last_name}</a>")
+        return format_html("<a href={}>{}</a>", link, letter.person.last_name)
 
-    setattr(person_list_display, "allow_tags", True)
     setattr(person_list_display, "admin_order_field", "person__last_name")
     setattr(person_list_display, "short_description", "Person")
 
@@ -113,11 +112,7 @@ class LetterAdmin(ImportExportModelAdmin):
         link = reverse(
             "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
         )
-        return format_html(f"<a href={link}>{letter.prison_sent_to}</a>")
-
-    setattr(prison_sent_to_list_display, "allow_tags", True)
-    setattr(prison_sent_to_list_display, "allow_tags", "prison__name")
-    setattr(prison_sent_to_list_display, "allow_tags", "Prison Sent To")
+        return format_html("<a href={}>{}</a>", link, letter.prison_sent_to)
 
     def prison_mailing_address(self, letter: Letter):
         if not letter.person or not letter.person.current_prison:
@@ -146,9 +141,6 @@ class LetterAdmin(ImportExportModelAdmin):
             curr_prison.mailing_state,
             curr_prison.mailing_zipcode,
         )
-
-    setattr(prison_mailing_address, "allow_tags", True)
-    setattr(prison_mailing_address, "allow_tags", "Non-SCI address")
 
     def eligibility(self, letter: Letter) -> bool:
         return letter.person.eligible if letter.person else False
