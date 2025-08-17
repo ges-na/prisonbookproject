@@ -1,6 +1,7 @@
+from ajax_select import LookupChannel, register
 from django.db.models import Q
-from ajax_select import register, LookupChannel
-from .models import Person
+
+from src.app.models.person import Person
 
 
 @register("person")
@@ -17,7 +18,7 @@ class PersonLookup(LookupChannel):
     def format_match(self, person):
         return f"<span class='person'>{person.inmate_number} - {person.last_name}, {person.first_name}</span>"
 
-    def format_item_display(self, person):
+    def format_item_display(self, person: Person):
         body = f"""
                 <div>
                 <a
@@ -33,8 +34,10 @@ class PersonLookup(LookupChannel):
                 {person.inmate_number} - {person.last_name}, {person.first_name}</div>
                 <div>{person.current_prison}</div>
                 """
-        eligibility = f"<div>{person.eligibility}</div>"
+        eligibility = f"<div>{person.get_eligibility_str()}</div>"
         if person.current_prison and person.current_prison.restrictions:
-            restrictions = f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
+            restrictions = (
+                f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
+            )
             return body + restrictions + eligibility
         return body + eligibility
