@@ -15,7 +15,7 @@ kill_timeout = "5s"
   release_command = "bash -c \"poetry run python manage.py migrate\""
 
 [env]
-  DJANGO_SETTINGS_MODULE = "prisonbookproject.settings_deployed"
+  DJANGO_SETTINGS_MODULE = "src.prisonbookproject.settings_deployed"
   PORT = "8000"
 
 [[services]]
