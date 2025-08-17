@@ -52,10 +52,10 @@ class Migration(migrations.Migration):
                 to="app.prison",
             ),
         ),
-        migrations.AlterField(
+        # Hand-edit
+        migrations.RemoveField(
             model_name="prison",
             name="accepts_books",
-            field=models.BooleanField(default=True),
         ),
         migrations.AlterField(
             model_name="prison",

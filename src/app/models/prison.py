@@ -28,8 +28,8 @@ class Prison(models.Model):
     mailing_state = models.CharField(max_length=50, default="PA")
     mailing_zipcode = models.CharField(max_length=200)
     restrictions = models.TextField(blank=True)
-    # TODO: FEATURE (Field Type Change from CharField)
-    accepts_books = models.BooleanField(default=True)
+    # TODO: FEATURE
+    # accepts_books =models.CharField(choices=[("true", "Yes"), ("restricted", "Yes, with restrictions"), ("false", "No"), ("unknown", "Unknown")], default="unknown")
     legacy_id = models.CharField(max_length=50, blank=True)
     notes = models.TextField(blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
