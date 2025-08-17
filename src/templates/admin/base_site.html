@@ -5,9 +5,9 @@
 {% endblock %}
 {% block extrastyle %}
 {% if env_name == "local" %}
-<link rel="stylesheet" href={% static 'admin/css/local_color.css' %}/>
+<link rel="stylesheet" href={% static 'admin/css/local_color.css' %} />
 {% elif env_name == "dev" %}
-<link rel="stylesheet" href={% static 'admin/css/dev_color.css' %}/>
+<link rel="stylesheet" href={% static 'admin/css/dev_color.css' %} />
 {% endif %}
 {% endblock %}
 {% block branding %}
