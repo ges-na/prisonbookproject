@@ -1,6 +1,7 @@
 from ajax_select.fields import render_to_string
 from django.db import models
 
+NO_PRISON_STR = "Not in custody"
 
 class WorkflowStage(models.TextChoices):
     STAGE1_COMPLETE = "stage1_complete", "Stage 1 complete"

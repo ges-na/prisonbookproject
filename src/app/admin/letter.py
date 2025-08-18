@@ -1,14 +1,16 @@
 from datetime import datetime
 
-from ajax_select import make_ajax_form
+from ajax_select.admin import AjaxSelectAdmin
+from ajax_select import make_ajax_field, make_ajax_form
 from ajax_select.fields import autoselect_fields_check_can_add
 from django.contrib import admin
+from django.forms import ModelForm, ValidationError
 from django.urls import reverse
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
 from src.app.models.letter import Letter
-from src.app.models.person import WorkflowStage
+from src.app.models.person import Person, WorkflowStage
 from src.app.models.prison import Prison
 from src.app.utils import render_address_template
 
@@ -35,8 +37,24 @@ def move_to_fulfilled(modeladmin, request, queryset):
         letter.save()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
 
+class LetterForm(ModelForm):
 
-class LetterAdmin(ImportExportModelAdmin):
+    person = make_ajax_field(Letter, "person", "person")
+
+    class Meta:
+        model = Letter
+        fields = ["person", "postmark_date", "stage1_complete_date", "workflow_stage", "counts_against_last_served", "notes"]
+
+    def clean_person(self):
+        if person := self.cleaned_data.get("person"):
+            if person.current_prison:
+                return person
+            else:
+                raise ValidationError(f"Adding a person to a letter requires that person to have a current_prison. Please add current prison value to {person.inmate_number} {person.full_name} to create/update this letter.")
+        raise ValidationError("You must add a person to create or update a letter.")
+
+class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
+    form = LetterForm
     list_display = (
         "letter_name",
         "workflow_stage",
@@ -145,15 +163,13 @@ class LetterAdmin(ImportExportModelAdmin):
     def eligibility(self, letter: Letter) -> bool:
         return letter.person.eligible if letter.person else False
 
-    form = make_ajax_form(Letter, {"person": "person"})
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields[
-            "counts_against_last_served"
-        ].label = "Counts toward the person's last served date. (Only uncheck for survey response packages.)"
-        autoselect_fields_check_can_add(form, self.model, request.user)
-        return form
+   # def get_form(self, request, obj=None, **kwargs):
+   #     form = super().get_form(request, obj, **kwargs)
+   #     form.base_fields[
+   #         "counts_against_last_served"
+   #     ].label = "Counts toward the person's last served date. (Only uncheck for survey response packages.)"
+   #     autoselect_fields_check_can_add(form, self.model, request.user)
+   #     return form
 
     def save_model(self, request, obj, form, change):
         if not obj.pk:

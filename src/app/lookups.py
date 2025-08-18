@@ -1,6 +1,8 @@
 from ajax_select import LookupChannel, register
 from django.db.models import Q
 
+from django.utils.html import format_html
+from django.urls import reverse
 from src.app.models.person import Person
 
 
@@ -16,28 +18,31 @@ class PersonLookup(LookupChannel):
         ).order_by("inmate_number")[:10]
 
     def format_match(self, person):
-        return f"<span class='person'>{person.inmate_number} - {person.last_name}, {person.first_name}</span>"
+        return format_html("<span class='person'>{} - {}, {}</span>", person.inmate_number, person.last_name, person.first_name)
 
     def format_item_display(self, person: Person):
-        body = f"""
+
+        link = reverse('admin:app_person_change', kwargs={"object_id": person.id})
+        # TODO: a refresh button would be cool here, since
+        # the person data doesn't refresh after editing in popout
+        body = format_html("""
                 <div>
                 <a
-                    id='{person.id}'
                     class='related-widget-wrapper-link change-related'
-                    data-href-template='/admin/app/person/{person.id}/change/?_to_field=id&_popup=1'
-                    href='/admin/app/person/{person.id}/change/?_to_field=id&_popup=1'
+                    href='{}'
+                    onclick="return showAddAnotherPopup(this);"
                 >
                     <img src="/static/admin/img/icon-changelink.svg" alt="Change">
                 </a>
                 </div>
                 <div>
-                {person.inmate_number} - {person.last_name}, {person.first_name}</div>
-                <div>{person.current_prison}</div>
-                """
-        eligibility = f"<div>{person.get_eligibility_str()}</div>"
+                {} - {}, {}</div>
+                <div>{}</div>
+                    """, link, person.inmate_number, person.last_name, person.first_name, person.current_prison)
+        eligibility = format_html("<div>{}</div>", person.get_eligibility_str())
         if person.current_prison and person.current_prison.restrictions:
-            restrictions = (
-                f"<div>RESTRICTIONS: {person.current_prison.restrictions}</div>"
+            restrictions = format_html(
+                "<div>RESTRICTIONS: {}</div>", person.current_prison.restrictions
             )
-            return body + restrictions + eligibility
-        return body + eligibility
+            return format_html("<div id='person_data'> {} {} {} </div>", body, restrictions, eligibility)
+        return format_html("<div id='person_data'> {} {} </div>", body, eligibility)

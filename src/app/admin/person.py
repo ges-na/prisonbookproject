@@ -1,14 +1,14 @@
 from django.contrib import admin
-from django.forms import ModelForm, Textarea, ValidationError, fields
+from django.forms import ModelForm, ValidationError, fields
 from django.urls import reverse
 from django.utils.html import format_html
-from import_export import resources, widgets
+from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 
 from src.app.models.person import Person
 from src.app.models.prison import PersonPrison, Prison
-from src.app.utils import WorkflowStage
+from src.app.utils import NO_PRISON_STR, WorkflowStage
 
 
 class PersonResource(resources.ModelResource):
@@ -17,13 +17,6 @@ class PersonResource(resources.ModelResource):
     eligible = Field(attribute="eligible")
     package_count = Field(attribute="package_count")
     letter_count = Field(attribute="letter_count")
-    # this causes legacy_last_served_date to be part of the export
-    # even though it is probably confusing
-    legacy_last_served_date = Field(
-        attribute="legacy_last_served_date",
-        column_name="legacy_last_served_date",
-        widget=widgets.DateTimeWidget(format="%Y-%m-%d %H:%M:%S"),
-    )
 
     class Meta:
         model = Person
@@ -37,8 +30,6 @@ class PersonResource(resources.ModelResource):
             "first_name",
             "name_suffix",
             "status",
-            "legacy_last_served_date",
-            "legacy_prison_id",
         )
         readonly_fields = (
             "current_prison",
@@ -60,19 +51,6 @@ class PersonResource(resources.ModelResource):
             "letter_count",
             "package_count",
         )
-
-    def after_save_instance(self, instance, using_transactions, dry_run):
-        if instance.legacy_prison_id is None:
-            return
-        legacy_prison_id = instance.legacy_prison_id
-        prison = Prison.objects.filter(legacy_id=legacy_prison_id).first()
-        if not prison:
-            raise Exception(f"Prison with legacy id {legacy_prison_id} not found!")
-        existing_records = PersonPrison.objects.filter(person_id=instance.id).count()
-        if existing_records > 0:
-            return
-        PersonPrison.objects.create(person_id=instance.id, prison_id=prison.id)
-
 
 class PersonAdminForm(ModelForm):
     allow_empty_inmate = False
@@ -152,7 +130,6 @@ class PersonCreateForm(PersonAdminForm):
 class PersonPrisonInline(admin.TabularInline):
     model = PersonPrison
     max_num = 1
-    can_delete = False
     verbose_name = "Prison"
     verbose_name_plural = "Prisons"
     fields = ("prison",)
@@ -160,6 +137,7 @@ class PersonPrisonInline(admin.TabularInline):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "prison":
             kwargs["queryset"] = Prison.objects.all().order_by("name")
+            kwargs["empty_label"] = NO_PRISON_STR
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_formset(self, request, obj=None, **kwargs):
@@ -235,9 +213,9 @@ class PersonAdmin(ImportExportModelAdmin):
         else:
             return PersonCreateForm.Meta.fields
 
-    def current_prison(self, person):
+    def current_prison(self, person) -> str:
         if not person.current_prison:
-            return
+            return NO_PRISON_STR
         link = reverse(
             "admin:app_prison_change", kwargs={"object_id": person.current_prison.id}
         )

@@ -61,6 +61,10 @@ class Person(models.Model):
         if person_prison := self.prisons.first():
             return person_prison.prison
 
+    @property
+    def full_name(self) -> str:
+         return f"{self.first_name} {self.middle_name if self.middle_name else ''} {self.last_name}{' ' + self.name_suffix if self.name_suffix else ''}"
+
     @cached_property
     def last_served(self):
         if fulfilled_letters := self.letter_set.filter(

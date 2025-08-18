@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils.timezone import now
+
+from ..utils import NO_PRISON_STR
 
 
 class Prison(models.Model):
@@ -61,7 +62,7 @@ class PersonPrison(models.Model):
         "Person", on_delete=models.CASCADE, related_name="prisons"
     )
     prison = models.ForeignKey(
-        "Prison", on_delete=models.CASCADE, related_name="people"
+            "Prison", on_delete=models.CASCADE, related_name="people", null=True, blank=True
     )
     created_date = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -73,4 +74,6 @@ class PersonPrison(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        if not self.prison:
+            return f"{NO_PRISON_STR} - {self.person.last_name}"
         return f"{self.prison.name} - {self.person.last_name}"
