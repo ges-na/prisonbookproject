@@ -132,6 +132,7 @@ class PersonPrisonInline(admin.TabularInline):
     max_num = 1
     verbose_name = "Prison"
     verbose_name_plural = "Prisons"
+    can_delete = False
     fields = ("prison",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -153,6 +154,44 @@ class PersonPrisonInline(admin.TabularInline):
         widget.can_change_related = False
         return formset
 
+
+class PrisonListFilter(admin.SimpleListFilter):
+    title = "prisons"
+    parameter_name = "personprison"
+
+    def lookups(self, request, model_admin):
+        prisons = []
+        for prison in Prison.objects.all():
+            prisons.append((prison.id, prison.name))
+        prisons.append(("no_prison", NO_PRISON_STR))
+        return prisons
+
+    def queryset(self, request, queryset):
+        if not self.value():
+            return queryset.all()
+        if self.value() == "no_prison":
+            return queryset.filter(prisons__prison__id=None)
+        return queryset.filter(prisons__prison__id=self.value())
+
+class EligibilityListFilter(admin.SimpleListFilter):
+    title = "Eligibility"
+    parameter_name = "eligibility"
+
+    def lookups(self, request, model_admin):
+        return [
+                ("true", "Eligible"),
+                ("false", "Not eligible"),
+                ("pending", "Eligible, letters pending"),
+                ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "true":
+            return queryset.eligible()
+        elif self.value() == "false":
+            return queryset.not_eligible()
+        elif self.value() == "pending":
+            return queryset.eligible().with_pending_letters()
+        return queryset.all()
 
 class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
@@ -187,8 +226,8 @@ class PersonAdmin(ImportExportModelAdmin):
         "letter_count",
     )
     list_filter = (
-        # "prisons__prison",
-        # EligibilityListFilter,
+        PrisonListFilter,
+        EligibilityListFilter,
     )
     search_fields = (
         "inmate_number",
@@ -201,6 +240,7 @@ class PersonAdmin(ImportExportModelAdmin):
     )
     list_per_page = 25
     inlines = [PersonPrisonInline]
+
 
     def get_form(self, request, obj=None, **kwargs):
         if not obj:

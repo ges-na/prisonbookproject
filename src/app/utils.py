@@ -6,7 +6,6 @@ NO_PRISON_STR = "Not in custody"
 class WorkflowStage(models.TextChoices):
     STAGE1_COMPLETE = "stage1_complete", "Stage 1 complete"
     FULFILLED = "fulfilled", "Fulfilled"
-    JUST_PADA = "just_pada", "Just PADA"
     PROBLEM = "problem", "Problem"
     DISCARDED = "discarded", "Discarded"
 

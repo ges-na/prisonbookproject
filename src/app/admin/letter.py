@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from ajax_select.admin import AjaxSelectAdmin
-from ajax_select import make_ajax_field, make_ajax_form
-from ajax_select.fields import autoselect_fields_check_can_add
+from ajax_select import make_ajax_field
 from django.contrib import admin
 from django.forms import ModelForm, ValidationError
 from django.urls import reverse
@@ -10,7 +9,7 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
 from src.app.models.letter import Letter
-from src.app.models.person import Person, WorkflowStage
+from src.app.models.person import WorkflowStage
 from src.app.models.prison import Prison
 from src.app.utils import render_address_template
 
@@ -36,6 +35,16 @@ def move_to_fulfilled(modeladmin, request, queryset):
         letter.prison_sent_to = letter.person.current_prison
         letter.save()
     queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
+
+@admin.action(description="Mark selected letters as Discarded")
+def move_to_discarded(modeladmin, request, queryset):
+    for letter in queryset:
+        if letter.workflow_stage is WorkflowStage.FULFILLED:
+            # TODO: did not trigger?
+            raise Exception(
+                f"Cannot discard letter that has been fulfilled."
+            )
+    queryset.update(workflow_stage=WorkflowStage.DISCARDED)
 
 class LetterForm(ModelForm):
 
@@ -71,7 +80,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         "created_date",
         "modified_date",
     )
-    list_filter = ("workflow_stage", "prison_sent_to")
+    list_filter = ("workflow_stage", "prison_sent_to", "fulfilled_date")
     list_display_links = ("letter_name",)
     search_fields = (
         "person__last_name",
@@ -94,9 +103,13 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
     actions = (
         move_to_fulfilled,
         move_to_stage1_complete,
+        move_to_discarded
     )
 
     list_per_page = 50
+
+    def eligibility(self, letter):
+        return letter.person.get_eligibility_str()
 
     def letter_name(self, letter):
         if not letter.person:
@@ -159,17 +172,6 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
             curr_prison.mailing_state,
             curr_prison.mailing_zipcode,
         )
-
-    def eligibility(self, letter: Letter) -> bool:
-        return letter.person.eligible if letter.person else False
-
-   # def get_form(self, request, obj=None, **kwargs):
-   #     form = super().get_form(request, obj, **kwargs)
-   #     form.base_fields[
-   #         "counts_against_last_served"
-   #     ].label = "Counts toward the person's last served date. (Only uncheck for survey response packages.)"
-   #     autoselect_fields_check_can_add(form, self.model, request.user)
-   #     return form
 
     def save_model(self, request, obj, form, change):
         if not obj.pk:

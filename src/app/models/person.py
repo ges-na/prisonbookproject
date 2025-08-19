@@ -20,6 +20,23 @@ if TYPE_CHECKING:
 ELIGIBILITY_INTERVAL_DAYS = 90
 
 
+class PersonQuerySet(models.QuerySet):
+
+    def has_letters(self):
+        return self.filter(letter__isnull=False)
+
+    def with_pending_letters(self):
+        # People with letters with null fulfilled_date values (so, unfulfilled)
+        return self.has_letters().filter(letter__fulfilled_date__isnull=True)
+
+    def eligible(self):
+        # Exclude people with letters with fulfilled_date within ELIGIBILITY_INTERVAL_DAYS
+        return self.exclude(letter__fulfilled_date__gt=datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS))
+
+    def not_eligible(self):
+        # People with letters with fulfilled_date within ELIGIBILITY_INTERVAL_DAYS
+        return self.filter(letter__fulfilled_date__gt=datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS))
+
 class Person(models.Model):
     class Statuses(models.TextChoices):
         SOLITARY = "solitary", "Solitary"
@@ -44,6 +61,7 @@ class Person(models.Model):
     id: int
     prisons: QuerySet[PersonPrison]
     letter_set: QuerySet[Letter]
+    objects = PersonQuerySet.as_manager()
 
     class Meta:
         verbose_name_plural = "people"
