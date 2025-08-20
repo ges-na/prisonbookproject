@@ -14,38 +14,6 @@ from src.app.models.prison import Prison
 from src.app.utils import render_address_template
 
 
-# probably only good for testing, might turn off later
-@admin.action(description="Mark selected letters as Stage 1 Complete")
-def move_to_stage1_complete(modeladmin, request, queryset):
-    queryset.update(
-        fulfilled_date=None,
-        workflow_stage=WorkflowStage.STAGE1_COMPLETE,
-    )
-
-
-# WorkflowStage.FULFILLED turned off in form, only available via this admin action
-@admin.action(description="Mark selected letters as Fulfilled")
-def move_to_fulfilled(modeladmin, request, queryset):
-    now = datetime.now()
-    for letter in queryset:
-        if not letter.person:
-            raise Exception(
-                f"Letter {letter.id} has no person. There needs to be a letter.person for this operation"
-            )
-        letter.prison_sent_to = letter.person.current_prison
-        letter.save()
-    queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
-
-@admin.action(description="Mark selected letters as Discarded")
-def move_to_discarded(modeladmin, request, queryset):
-    for letter in queryset:
-        if letter.workflow_stage is WorkflowStage.FULFILLED:
-            # TODO: did not trigger?
-            raise Exception(
-                f"Cannot discard letter that has been fulfilled."
-            )
-    queryset.update(workflow_stage=WorkflowStage.DISCARDED)
-
 class LetterForm(ModelForm):
 
     person = make_ajax_field(Letter, "person", "person")
@@ -101,9 +69,9 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         "notes",
     )
     actions = (
-        move_to_fulfilled,
-        move_to_stage1_complete,
-        move_to_discarded
+        "move_to_fulfilled",
+        "move_to_stage1_complete",
+        "move_to_discarded"
     )
 
     list_per_page = 50
@@ -144,6 +112,36 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
             "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
         )
         return format_html("<a href={}>{}</a>", link, letter.prison_sent_to)
+
+    @admin.action(description="Mark selected letters as Stage 1 Complete")
+    def move_to_stage1_complete(self, request, queryset):
+        queryset.update(
+            fulfilled_date=None,
+            workflow_stage=WorkflowStage.STAGE1_COMPLETE,
+        )
+
+    @admin.action(description="Mark selected letters as Fulfilled")
+    def move_to_fulfilled(self, request, queryset):
+        """
+        WorkflowStage.FULFILLED turned off in form, only available via this admin action.
+        """
+        for letter in queryset:
+            if not letter.person:
+                link = reverse('admin:app_letter_change', kwargs={"object_id": letter.id})
+                self.message_user(request, format_html("Letter <a href={} data-popup='yes'>{} - {}</a> not changed. There needs to be a person assigned to the letter for this operation.", link, letter.id, letter.name))
+                continue
+            letter.prison_sent_to = letter.person.current_prison
+            letter.save()
+        queryset.update(fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED)
+
+    @admin.action(description="Mark selected letters as Discarded")
+    def move_to_discarded(self, request, queryset):
+        for letter in queryset:
+            if letter.workflow_stage == WorkflowStage.FULFILLED:
+                link = reverse('admin:app_letter_changelist', kwargs={"object_id": letter.id})
+                self.message_user(request, format_html("Cannot mark Fulfilled letter as Discarded. Letter <a href={}>{} - {}</a> not changed.", link, letter.id, letter.name))
+                continue
+        queryset.update(workflow_stage=WorkflowStage.DISCARDED)
 
     def prison_mailing_address(self, letter: Letter):
         if not letter.person or not letter.person.current_prison:
