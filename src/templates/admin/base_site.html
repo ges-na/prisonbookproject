@@ -4,11 +4,31 @@
 <link rel="icon" href="{% static 'admin/img/favicon.ico' %}" sizes="48x48" />
 {% endblock %}
 {% block extrastyle %}
-{% if env_name == "local" %}
-<link rel="stylesheet" href={% static 'admin/css/local_color.css' %} />
-{% elif env_name == "dev" %}
-<link rel="stylesheet" href={% static 'admin/css/dev_color.css' %} />
-{% endif %}
+    <style>
+      #local-banner {
+        text-align: center;
+        background: #dafbd9;
+        color: #1F1F1F;
+        font-size: xx-large;
+        padding-bottom: 10px;
+        padding-top: 10px;
+      }
+      #dev-banner {
+        text-align: center;
+        background: #fba165;
+        color: #1F1F1F;
+        font-size: xx-large;
+        padding-bottom: 10px;
+        padding-top: 10px;
+      }
+    </style>
+  {% if env_name == "local" %}
+    <link rel="stylesheet" href={% static 'admin/css/local_color.css' %} />
+    <div id="local-banner">LOCAL DATABASE - NOT REAL DATA</div>
+  {% elif env_name == "dev" %}
+    <link rel="stylesheet" href={% static 'admin/css/dev_color.css' %} />
+    <div id="dev-banner">DEVELOPMENT DATABASE - NOT REAL DATA</div>
+  {% endif %}
 {% endblock %}
 {% block branding %}
       <span id="logo">
