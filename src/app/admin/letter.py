@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from ajax_select.admin import AjaxSelectAdmin
-from ajax_select import make_ajax_field, make_ajax_form
-from ajax_select.fields import autoselect_fields_check_can_add
+from ajax_select import make_ajax_field
 from django.contrib import admin
 from django.forms import ModelForm, ValidationError
 from django.urls import reverse
@@ -10,32 +9,10 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
 from src.app.models.letter import Letter
-from src.app.models.person import Person, WorkflowStage
+from src.app.models.person import WorkflowStage
 from src.app.models.prison import Prison
 from src.app.utils import render_address_template
 
-
-# probably only good for testing, might turn off later
-@admin.action(description="Mark selected letters as Stage 1 Complete")
-def move_to_stage1_complete(modeladmin, request, queryset):
-    queryset.update(
-        fulfilled_date=None,
-        workflow_stage=WorkflowStage.STAGE1_COMPLETE,
-    )
-
-
-# WorkflowStage.FULFILLED turned off in form, only available via this admin action
-@admin.action(description="Mark selected letters as Fulfilled")
-def move_to_fulfilled(modeladmin, request, queryset):
-    now = datetime.now()
-    for letter in queryset:
-        if not letter.person:
-            raise Exception(
-                f"Letter {letter.id} has no person. There needs to be a letter.person for this operation"
-            )
-        letter.prison_sent_to = letter.person.current_prison
-        letter.save()
-    queryset.update(fulfilled_date=now, workflow_stage=WorkflowStage.FULFILLED)
 
 class LetterForm(ModelForm):
 
@@ -71,7 +48,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         "created_date",
         "modified_date",
     )
-    list_filter = ("workflow_stage", "prison_sent_to")
+    list_filter = ("workflow_stage", "prison_sent_to", "fulfilled_date")
     list_display_links = ("letter_name",)
     search_fields = (
         "person__last_name",
@@ -92,11 +69,15 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         "notes",
     )
     actions = (
-        move_to_fulfilled,
-        move_to_stage1_complete,
+        "move_to_fulfilled",
+        "move_to_stage1_complete",
+        "move_to_discarded"
     )
 
     list_per_page = 50
+
+    def eligibility(self, letter):
+        return letter.person.get_eligibility_str()
 
     def letter_name(self, letter):
         if not letter.person:
@@ -132,6 +113,36 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         )
         return format_html("<a href={}>{}</a>", link, letter.prison_sent_to)
 
+    @admin.action(description="Mark selected letters as Stage 1 Complete")
+    def move_to_stage1_complete(self, request, queryset):
+        queryset.update(
+            fulfilled_date=None,
+            workflow_stage=WorkflowStage.STAGE1_COMPLETE,
+        )
+
+    @admin.action(description="Mark selected letters as Fulfilled")
+    def move_to_fulfilled(self, request, queryset):
+        """
+        WorkflowStage.FULFILLED turned off in form, only available via this admin action.
+        """
+        for letter in queryset:
+            if not letter.person:
+                link = reverse('admin:app_letter_change', kwargs={"object_id": letter.id})
+                self.message_user(request, format_html("Letter <a href={} data-popup='yes'>{} - {}</a> not changed. There needs to be a person assigned to the letter for this operation.", link, letter.id, letter.name))
+                continue
+            letter.prison_sent_to = letter.person.current_prison
+            letter.save()
+        queryset.update(fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED)
+
+    @admin.action(description="Mark selected letters as Discarded")
+    def move_to_discarded(self, request, queryset):
+        for letter in queryset:
+            if letter.workflow_stage == WorkflowStage.FULFILLED:
+                link = reverse('admin:app_letter_changelist', kwargs={"object_id": letter.id})
+                self.message_user(request, format_html("Cannot mark Fulfilled letter as Discarded. Letter <a href={}>{} - {}</a> not changed.", link, letter.id, letter.name))
+                continue
+        queryset.update(workflow_stage=WorkflowStage.DISCARDED)
+
     def prison_mailing_address(self, letter: Letter):
         if not letter.person or not letter.person.current_prison:
             return
@@ -159,17 +170,6 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
             curr_prison.mailing_state,
             curr_prison.mailing_zipcode,
         )
-
-    def eligibility(self, letter: Letter) -> bool:
-        return letter.person.eligible if letter.person else False
-
-   # def get_form(self, request, obj=None, **kwargs):
-   #     form = super().get_form(request, obj, **kwargs)
-   #     form.base_fields[
-   #         "counts_against_last_served"
-   #     ].label = "Counts toward the person's last served date. (Only uncheck for survey response packages.)"
-   #     autoselect_fields_check_can_add(form, self.model, request.user)
-   #     return form
 
     def save_model(self, request, obj, form, change):
         if not obj.pk:
