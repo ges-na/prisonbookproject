@@ -125,23 +125,28 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         """
         WorkflowStage.FULFILLED turned off in form, only available via this admin action.
         """
+        change = []
         for letter in queryset:
             if not letter.person:
-                link = reverse('admin:app_letter_change', kwargs={"object_id": letter.id})
-                self.message_user(request, format_html("Letter <a href={} data-popup='yes'>{} - {}</a> not changed. There needs to be a person assigned to the letter for this operation.", link, letter.id, letter.name))
+                link = reverse('admin:app_letter_change', query=[("id", letter.id)])
+                self.message_user(request, format_html("Letter <a href={} data-popup='yes'>{} - {}</a> not changed. There needs to be a person assigned to the letter for this operation.", link, letter.id, self.letter_name(letter)))
                 continue
-            letter.prison_sent_to = letter.person.current_prison
-            letter.save()
-        queryset.update(fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED)
+            else:
+                change.append(letter.id)
+                letter.prison_sent_to = letter.person.current_prison
+                letter.save()
+        queryset.filter(id__in=change).update(fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED)
 
     @admin.action(description="Mark selected letters as Discarded")
     def move_to_discarded(self, request, queryset):
+        change = []
         for letter in queryset:
             if letter.workflow_stage == WorkflowStage.FULFILLED:
-                link = reverse('admin:app_letter_changelist', kwargs={"object_id": letter.id})
-                self.message_user(request, format_html("Cannot mark Fulfilled letter as Discarded. Letter <a href={}>{} - {}</a> not changed.", link, letter.id, letter.name))
-                continue
-        queryset.update(workflow_stage=WorkflowStage.DISCARDED)
+                link = reverse('admin:app_letter_changelist', query=[("id", letter.id)])
+                self.message_user(request, format_html("Cannot mark Fulfilled letter as Discarded. Letter <a href={}>{} - {}</a> not changed.", link, letter.id, self.letter_name(letter)))
+            else:
+                change.append(letter.id)
+        queryset.filter(id__in=change).update(workflow_stage=WorkflowStage.DISCARDED)
 
     def prison_mailing_address(self, letter: Letter):
         if not letter.person or not letter.person.current_prison:
