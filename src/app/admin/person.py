@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.forms import ModelForm, ValidationError, fields
+from django.forms.models import BaseInlineFormSet
 from django.urls import reverse
 from django.utils.html import format_html
 from import_export import resources
@@ -126,6 +127,26 @@ class PersonCreateForm(PersonAdminForm):
             cleaned_data["inmate_number"] = f"UNKNOWNID{last_pk}"
         return cleaned_data
 
+# class PersonPrisonInlineFormset(BaseInlineFormSet):
+#
+#     def clean(self):
+#         self.forms[0].cleaned_data.get("prison")
+#         return
+#
+    # def get_formset(self, request, obj=None, **kwargs):
+    #     """
+    #     Override the formset function in order to remove the add and
+    #     change buttons beside the foreign key pull-down menus in the inline.
+    #     From: https://stackoverflow.com/a/37558444
+    #     """
+    #     formset = super().get_formset(request, obj, **kwargs)
+    #     form = formset.form
+    #     widget = form.base_fields["prison"].widget
+    #     widget.can_add_related = False
+    #     widget.can_change_related = False
+    #     return formset
+
+
 
 class PersonPrisonInline(admin.TabularInline):
     model = PersonPrison
@@ -135,6 +156,12 @@ class PersonPrisonInline(admin.TabularInline):
     can_delete = False
     fields = ("prison",)
 
+
+    def has_delete_permission(self, request, obj=None):
+        if not request.user.is_superuser:
+            return False
+        return True
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "prison":
             kwargs["queryset"] = Prison.objects.all().order_by("name")
@@ -142,11 +169,6 @@ class PersonPrisonInline(admin.TabularInline):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_formset(self, request, obj=None, **kwargs):
-        """
-        Override the formset function in order to remove the add and
-        change buttons beside the foreign key pull-down menus in the inline.
-        From: https://stackoverflow.com/a/37558444
-        """
         formset = super().get_formset(request, obj, **kwargs)
         form = formset.form
         widget = form.base_fields["prison"].widget
