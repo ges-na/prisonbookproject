@@ -7,6 +7,7 @@
 * Add custom Person queryset/manager
 * Add No Longer In Custody labels / filter
 * Remove Just PADA workflow status
+* Bulk Letter discard action
 
 2025-08-17
 * Restructured project (added `src/` dir)
