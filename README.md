@@ -2,6 +2,10 @@
  A workflow and data collection tool designed to track letters from incarcerated readers.
 
 ## Changelog
+2025-11-21
+* Added GitHub Action for daily database backup to AWS (pg_dump .sql format to S3 bucket)
+* Tested backup and restore database  
+
 2025-08-19
 * Add filters to People table
 * Add custom Person queryset/manager
