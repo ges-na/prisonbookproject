@@ -11,8 +11,9 @@ jobs:
     uses: significa/fly-pg-dump-to-s3/.github/workflows/trigger-backup.yaml@v3
     with:
       fly-app: ppbp-db-backup-worker
-      volume-size: 1
       machine-size: shared-cpu-1x
       region: iad
+      error-on-dangling-volumes: true
+      delete-all-volumes: true
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
