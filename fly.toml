@@ -12,7 +12,7 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [deploy]
-  release_command = "bash -c \"poetry run python manage.py migrate\""
+  release_command = "poetry run python manage.py migrate"
 
 [env]
   DJANGO_SETTINGS_MODULE = "src.prisonbookproject.settings_deployed"
