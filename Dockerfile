@@ -17,6 +17,8 @@ ARG VIRTUAL_ENV=$(poetry env info --path)
 ARG PATH=$VIRTUAL_ENV/bin:$PATH
 RUN poetry env use 3.12
 
+COPY poetry.lock pyproject.toml /app/
+# RUN poetry config virtualenvs.create false && \
 RUN poetry install
 
 COPY . /app/

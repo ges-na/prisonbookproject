@@ -80,3 +80,9 @@ class PrisonAdmin(ImportExportModelAdmin):
             obj.created_by = request.user
         obj.modified_by = request.user
         super().save_model(request, obj, form, change)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = super().get_readonly_fields(request, obj)
+        if not request.user.is_superuser:
+            return [*readonly, "name"]
+        return readonly

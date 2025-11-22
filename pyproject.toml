@@ -56,3 +56,8 @@ force-sort-within-sections = true
 split-on-trailing-comma = true
 combine-as-imports = true
 known-third-party = ["django","django.contrib","django.utils"]
+
+# [virtualenvs]
+# create = true
+# in-project = true
+# path = ".poetry_venv"
