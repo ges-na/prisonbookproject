@@ -5,6 +5,7 @@
 2025-11-21
 * Added daily database backup to AWS (GitHub Action to pg_dump .sql format to S3 bucket)
 * Tested restore from backup locally and on Fly
+* Non-superusers can now edit prison address, notes, and restrictions
 
 2025-08-19
 * Add filters to People table
