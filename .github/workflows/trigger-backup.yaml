@@ -11,6 +11,7 @@ jobs:
     uses: significa/fly-pg-dump-to-s3/.github/workflows/trigger-backup.yaml@v3
     with:
       fly-app: ppbp-db-backup-worker
+      volume-size: 1
       machine-size: shared-cpu-1x
       region: iad
     secrets:
