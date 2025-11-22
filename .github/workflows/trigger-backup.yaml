@@ -13,7 +13,5 @@ jobs:
       fly-app: ppbp-db-backup-worker
       machine-size: shared-cpu-1x
       region: iad
-      error-on-dangling-volumes: true
-      delete-all-volumes: true
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
