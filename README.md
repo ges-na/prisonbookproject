@@ -3,8 +3,8 @@
 
 ## Changelog
 2025-11-21
-* Added GitHub Action for daily database backup to AWS (pg_dump .sql format to S3 bucket)
-* Tested backup and restore database  
+* Added daily database backup to AWS (GitHub Action to pg_dump .sql format to S3 bucket)
+* Tested restore from backup locally and on Fly
 
 2025-08-19
 * Add filters to People table
