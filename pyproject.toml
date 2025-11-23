@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "prison-book-project"
 version = "0.1.0"
@@ -9,7 +13,6 @@ package-mode = false
 python = "^3.12"
 django-environ = "^0.8.1"
 Django = "^5.2.1"
-# psycopg2 = "^2.9.3"
 django-extensions = "^3.1.5"
 django-import-export = "^2.8.0"
 psycopg2-binary = "^2.9.3"
@@ -20,27 +23,24 @@ whitenoise = "^6.2.0"
 gunicorn = "^20.1.0"
 django-ajax-selects = "^2.2.0"
 requests = "^2.28.1"
+ruff = "^0.14.6"
+isort = "^7.0.0"
+pyright = "1.1.407"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
 pyright = "^1.1.400"
 django-stubs = "^5.2.0"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.isort]
+profile = "black"
 
 [tool.pyright]
 include = ["src/*"]
 exclude = [
     "README.md",
-    ".venv",
+    ".venv"
 ]
-useLibraryCodeForTypes = true
-reportIncompatibleVariableOverride = false
-reportIncompatibleMethodOverride = false
-venvPath = "."
-venv = ".venv"
 stubPath = ""
 
 [tool.ruff]
