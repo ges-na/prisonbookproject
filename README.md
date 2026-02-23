@@ -20,11 +20,11 @@ Created for [Pittsburgh Prison Book Project](https://pghprisonbookproject.org/).
 - Track mailing info (e.g. unique package tracking info).
 - Get statistics without querying the database directly [planned basic dashboard functionality].
 
-## Limitations
-- This tool doesn't work out of the box. Anyone implementing it will need to have (at a minimum) some understanding of Python, Django, Postgres, and web-hosting tools (the current main implementation of this project is hosted on fly.io).
-- This tool was written with a particular context in mind. What this means is that local requirements (workflow stage names, required/available fields, etc.) are at times particular to that context and may require adjustment if implemented elsewhere.
-- The interface is just the Django Admin. This works great for using it like a database with user-friendly forms. This does not work great if you want the look and feel to be different.
-- Security. The main implementation is designed to track relatively little about incarcerated writers beyond instances of contact. If modifying, consider the sensitivity of data you are adding and whether it could potentially be used against incarcerated people if accessed by bad actors.
+## Limitations of this tool
+- **It requires technical setup and maintenance.** Anyone implementing it will need to have (at a minimum) some understanding of Python, Django, Postgres, and web-hosting tools (the current main implementation of this project is hosted on fly.io).
+- **It was written with a particular context in mind.** What this means is that local requirements (workflow stage names, required/available fields, etc.) are at times particular to that context and may require adjustment if implemented elsewhere.
+- **Its interface is opinionated.** The interface is just the Django Admin. This works great for using it like a database with user-friendly forms. This does not work great if you want the look and feel to be different.
+- **Data collection is not a neutral act.** The main implementation of this tool is designed to track relatively little about incarcerated writers beyond instances of contact. If modifying, weigh the sensitivity of data you are adding (i.e. whether it could potentially be used against incarcerated people if accessed by bad actors) against the planned uses of that data ("just to have it" is not sufficient) and your evaluation of your ability to adequately safeguard it (e.g. ability to keep up with patches for software vunerabilities, evaluation of how your org will determine who should have access to data, permissions for different kinds of accounts).
 
 # Changelog
 2025-11-21
@@ -56,14 +56,14 @@ Created for [Pittsburgh Prison Book Project](https://pghprisonbookproject.org/).
 ## Set up database
 1. Install `postgres` if needed.
 2. Set up project database and postgres user.
-```
-CREATE DATABASE <database_name>;
-CREATE ROLE <project_user> LOGIN PASSWORD '<project_user_pw>';
-# GRANT ALL ON DATABASE <database_name> TO <project_user>;
-\c <database_name>
-GRANT USAGE, CREATE ON SCHEMA public to <project_user>;
-```
-Note: Values such as `database_name`, `project_user`, and `project_user_pw` must match the `DATABASE_URL` env var parameters.
+    ```
+    CREATE DATABASE <database_name>;
+    CREATE ROLE <project_user> LOGIN PASSWORD '<project_user_pw>';
+    # GRANT ALL ON DATABASE <database_name> TO <project_user>;
+    \c <database_name>
+    GRANT USAGE, CREATE ON SCHEMA public to <project_user>;
+    ```
+    Note: Values such as `database_name`, `project_user`, and `project_user_pw` must match the `DATABASE_URL` env var parameters.
 3. From project root, run `./manage.py migrate`
 4. From project root, run `./manage.py createsuperuser`
 
