@@ -82,5 +82,5 @@ Notes:
 - You should receive an email if your database backup fails.
 - Make sure to test restoring from one of these db dumps on a non-production server, ideally on some regular schedule.
 
-### Licensing / reuse
+## Licensing / reuse
 This project is licensed under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html). If it is useful to your books to prisoners project, I'd be thrilled if you reuse/remix/implement it. If you have questions, [email me](mailto:gesinaface@gmail.com) or find me on [Bluesky](https://bsky.app/profile/gesina.bsky.social).
