@@ -5,18 +5,18 @@ A workflow and data collection tool designed to track letters from incarcerated 
 ## What you can do with this tool
 - Track letters through different workflow stages.
 - Create multiple users with different permissions (e.g. individual accounts, readonly account).
-- Allow bulk changes to workflow stages (e.g. selecting multiple letters to move to the next stage).
-- Provide a place to document per-letter issues.
+- Make bulk changes to workflow stages (e.g. selecting multiple letters to move to the next stage).
+- Document per-letter issues.
 - Create a record for each unique writer.
-- Provide a place to record per-prison restrictions.
-- Allow labeling of individuals as being in solitary or serving a life sentence.
-- Create database backups.
+- Record per-prison restrictions.
+- Label of individuals as being in solitary or serving a life sentence.
+- Create scheduled database backups.
 
 ## What you can't do with this tool*
 \* But probably could, if you want to modify it for your local context.
 - Track content of letters (e.g. books or genres requested).
 - Track mailing info (e.g. unique package tracking info).
-- Automatically provide statistics [planned functionality].
+- Get statistics without querying the database directly [planned basic dashboard functionality].
 
 ## Limitations
 - This tool doesn't work out of the box. Anyone implementing it will need to have (at a minimum) some understanding of Python, Django, Postgres, and web-hosting tools (the current main implementation of this project is hosted on fly.io).
