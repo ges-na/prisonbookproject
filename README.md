@@ -13,7 +13,7 @@ A workflow and data collection tool designed to track letters from incarcerated 
 - Create database backups.
 
 ## What this tool does not do*
-* But probably could, if you want to modify it for your local context.
+\* But probably could, if you want to modify it for your local context.
 - Track content of letters (e.g. books or genres requested).
 - Track mailing info (e.g. unique package tracking info).
 - Automatically provide statistics [planned functionality].
