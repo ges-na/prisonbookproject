@@ -20,8 +20,8 @@ A workflow and data collection tool designed to track letters from incarcerated 
 
 ## Limitations
 - This tool doesn't work out of the box. Anyone implementing it will need to have (at a minimum) some understanding of Python, Django, Postgres, and web-hosting tools (the current main implementation of this project is hosted on fly.io).
-- Context. This tool was written with a particular context in mind. What this means is that local requirements (workflow stage names, required/available fields, etc.) are at times particular to that context and may require adjustment if implemented elsewhere.
-- Use of Django Admin. The interface is just the Django Admin. This works great for using it like a database with user-friendly forms. This does not work great if you want the look and feel to be different.
+- This tool was written with a particular context in mind. What this means is that local requirements (workflow stage names, required/available fields, etc.) are at times particular to that context and may require adjustment if implemented elsewhere.
+- The interface is just the Django Admin. This works great for using it like a database with user-friendly forms. This does not work great if you want the look and feel to be different.
 
 # Changelog
 2025-11-21
