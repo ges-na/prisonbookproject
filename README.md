@@ -2,7 +2,7 @@ A workflow and data collection tool designed to track letters from incarcerated 
 
 # Details
 
-## What this tool does
+## What you can do with this tool
 - Track letters through different workflow stages.
 - Create multiple users with different permissions (e.g. individual accounts, readonly account).
 - Allow bulk changes to workflow stages (e.g. selecting multiple letters to move to the next stage).
@@ -12,14 +12,14 @@ A workflow and data collection tool designed to track letters from incarcerated 
 - Allow labeling of individuals as being in solitary or serving a life sentence.
 - Create database backups.
 
-## What this tool does not do*
+## What you can't do with this tool*
 \* But probably could, if you want to modify it for your local context.
 - Track content of letters (e.g. books or genres requested).
 - Track mailing info (e.g. unique package tracking info).
 - Automatically provide statistics [planned functionality].
 
 ## Limitations
-- This tool doesn't work out of the box. Anyone implementing it will need to have some understanding of Python, Django, Postgres, and web-hosting tools (the current main implementation of this project is hosted on fly.io).
+- This tool doesn't work out of the box. Anyone implementing it will need to have (at a minimum) some understanding of Python, Django, Postgres, and web-hosting tools (the current main implementation of this project is hosted on fly.io).
 - Context. This tool was written with a particular context in mind. What this means is that local requirements (workflow stage names, required/available fields, etc.) are at times particular to that context and may require adjustment if implemented elsewhere.
 - Use of Django Admin. The interface is just the Django Admin. This works great for using it like a database with user-friendly forms. This does not work great if you want the look and feel to be different.
 
