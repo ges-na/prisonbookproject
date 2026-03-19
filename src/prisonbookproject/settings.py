@@ -32,7 +32,10 @@ DEBUG = env("DEBUG")
 ENV_NAME = env("ENV_NAME")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
-CSRF_TRUSTED_ORIGINS = ["https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev"]
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["https://prisonbookproject.fly.dev", "https://ppbp-dev.fly.dev"],
+)
 CORS_ALLOWED_ORIGINS = env.list("CORS_WHITELIST")
 CORS_ALLOW_CREDENTIALS = True
 SECRET_KEY = env("SECRET_KEY")

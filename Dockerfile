@@ -22,6 +22,7 @@ COPY poetry.lock pyproject.toml /app/
 RUN poetry install
 
 COPY . /app/
+RUN chmod +x /app/docker-entrypoint.sh
 
 ENV DJANGO_SETTINGS_MODULE "src.prisonbookproject.settings_deployed"
 ENV ALLOWED_HOSTS "*","127.0.0.1:8000","localhost","0.0.0.0"
@@ -30,5 +31,5 @@ ENV CORS_WHITELIST "https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev
 
 EXPOSE 8000
 
-# CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Default: just run gunicorn (Fly.io handles migrations via release_command)
 CMD ["sh", "-c", "poetry run python manage.py collectstatic --noinput && poetry run gunicorn --bind :8000 --workers 2 src.prisonbookproject.wsgi:application"]

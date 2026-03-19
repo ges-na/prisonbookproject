@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: prison_book_project
+      POSTGRES_USER: pbp
+      POSTGRES_PASSWORD: pbp-local-dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pbp -d prison_book_project"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build: .
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    command: []
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://pbp:pbp-local-dev@db:5432/prison_book_project
+      DJANGO_SETTINGS_MODULE: src.prisonbookproject.settings_deployed
+      SECRET_KEY: local-testing-secret-key-change-in-production
+      ALLOWED_HOSTS: "*,localhost,127.0.0.1"
+      CORS_WHITELIST: "http://localhost:8000,http://127.0.0.1:8000"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8000,http://127.0.0.1:8000"
+      ENV_NAME: local
+      DEBUG: "True"
+      DJANGO_SUPERUSER_USERNAME: admin
+      DJANGO_SUPERUSER_PASSWORD: admin
+      DJANGO_SUPERUSER_EMAIL: admin@example.com
+
+volumes:
+  pgdata:
