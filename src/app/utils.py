@@ -8,6 +8,7 @@ class WorkflowStage(models.TextChoices):
     FULFILLED = "fulfilled", "Fulfilled"
     PROBLEM = "problem", "Problem"
     DISCARDED = "discarded", "Discarded"
+    RETURNED = "returned", "Returned"
 
 
 def render_address_template(

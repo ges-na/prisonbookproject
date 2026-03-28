@@ -148,6 +148,13 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
                 change.append(letter.id)
         queryset.filter(id__in=change).update(workflow_stage=WorkflowStage.DISCARDED)
 
+    # @admin.action(description="Mark selected letters as returned")
+    # def move_to_stage1_complete(self, request, queryset):
+    #     queryset.update(
+    #         workflow_stage=WorkflowStage.RETURNED,
+    #         note=
+    #     )
+
     def prison_mailing_address(self, letter: Letter):
         if not letter.person or not letter.person.current_prison:
             return
