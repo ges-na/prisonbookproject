@@ -11,14 +11,14 @@ WORKDIR /app
 
 COPY poetry.lock pyproject.toml /app/
 
-RUN pip3 install poetry==2.1.4
+RUN pip3 install poetry==2.3.2
 RUN poetry run true
 ARG VIRTUAL_ENV=$(poetry env info --path)
 ARG PATH=$VIRTUAL_ENV/bin:$PATH
-RUN poetry env use 3.12
 
 COPY poetry.lock pyproject.toml /app/
 # RUN poetry config virtualenvs.create false && \
+RUN poetry env use 3.12
 RUN poetry install
 
 COPY . /app/
