@@ -14,5 +14,6 @@ jobs:
       volume-size: 1
       machine-size: shared-cpu-1x
       region: iad
+      postgres_version: '17.7'
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
