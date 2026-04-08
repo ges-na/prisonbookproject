@@ -47,6 +47,14 @@ Created for [Pittsburgh Prison Book Project](https://pghprisonbookproject.org/).
 
 # Setup
 
+## Quick start with Docker
+
+```
+docker compose up --build
+```
+
+The app will be available at http://localhost:8000 with a default admin account (`admin` / `admin`).
+
 ## Create environment
 1. Install [poetry](https://python-poetry.org/docs/#installation).
 2. Create `.env` file (see `.env.example`). 
