@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from src.auth.models import User
 from django.db import models
 
 from ..utils import NO_PRISON_STR

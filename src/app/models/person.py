@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from django.contrib.auth.models import User
+from src.auth.models import User
 from django.db import models
 from django.db.models.query import QuerySet
 from django.urls import reverse
@@ -138,16 +138,19 @@ class Person(models.Model):
         )
         return self.last_served <= cooldown_interval
 
-    def get_eligibility_str(self) -> str:
+    def get_eligibility_str(self, links: bool = True) -> str:
         pending_letters_string = None
         if self.has_pending_letters:
-            pending_letters_string = format_html(
-                "<a href={}?person={}&workflow_stage__in={}>{}</a>",
-                reverse('admin:app_letter_changelist'),
-                self.id,
-                WorkflowStage.STAGE1_COMPLETE,
-                f"{self.pending_letter_count} letters pending",
-            )
+            if links:
+                pending_letters_string = format_html(
+                    "<a href={}?person={}&workflow_stage__in={}>{}</a>",
+                    reverse('admin:app_letter_changelist'),
+                    self.id,
+                    WorkflowStage.STAGE1_COMPLETE,
+                    f"{self.pending_letter_count} letters pending",
+                )
+            else:
+                pending_letters_string = f"{self.pending_letter_count} letters pending"
         if not self.eligible:
             assert self.last_served
             eligible_dt = self.last_served + timedelta(days=ELIGIBILITY_INTERVAL_DAYS)

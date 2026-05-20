@@ -10,6 +10,9 @@ urlpatterns = [
     path("", redirect_to_admin),
     path("viz/", include(urlpatterns)),
     path(r"ajax_select/", include(ajax_select_urls)),
+    path("accounts/", include("django_registration.backends.activation.urls")),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("", include("src.app.urls")),
 ]
 
 admin.site.site_header = "Pittsburgh Prison Book Project"

@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+    "django_registration",
     "ajax_select",
     "import_export",
 ]
@@ -94,6 +95,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "src.prisonbookproject.wsgi.application"
 
+
+AUTH_USER_MODEL = "CustomAuth.User"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

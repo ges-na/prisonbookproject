@@ -16,7 +16,7 @@ from src.app.utils import render_address_template
 
 class LetterForm(ModelForm):
 
-    person = make_ajax_field(Letter, "person", "person")
+    person = make_ajax_field(Letter, "person", "person_channel")
 
     class Meta:
         model = Letter
