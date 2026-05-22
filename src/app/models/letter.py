@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
 from src.app.utils import WorkflowStage
+from src.auth.models import User
 
 if TYPE_CHECKING:
     from src.app.models.person import Person
@@ -20,9 +20,7 @@ class Letter(models.Model):
     stage1_complete_date = models.DateTimeField(null=True, blank=True, default=now)
     fulfilled_date = models.DateTimeField(null=True, blank=True)
     # TODO REFACTOR: Re-address (more addresses)
-    counts_against_last_served = models.BooleanField(
-        null=False, blank=False, default=True
-    )
+    counts_against_last_served = models.BooleanField(null=False, blank=False, default=True)
     prison_requested_from = models.ForeignKey(
         "Prison",
         null=True,

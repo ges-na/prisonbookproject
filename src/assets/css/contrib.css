@@ -1,0 +1,21 @@
+.contrib-header {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--color-plum);
+  align-items: center;
+}
+
+.contrib-links {
+  display: flex;
+  gap: 15px;
+}
+
+.results_on_deck div {
+  background-color: var(--color-mint);
+  color: var(--color-plum);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+

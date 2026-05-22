@@ -24,7 +24,8 @@ dependencies = [
 "gunicorn==25.3.0",
 "django-ajax-selects==3.0.3",
 "requests==2.33.0",
-"django-registration (>=5.2.1,<6.0.0)"]
+"django-registration (>=5.2.1,<6.0.0)",
+"ruff (>=0.15.14,<0.16.0)"]
 
 [project.group.dev]
 dependencies = [

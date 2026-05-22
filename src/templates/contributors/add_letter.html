@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "contributors/contrib_base.html" %}
 {% block extra_header %}
 {{ form.media }}
 {% endblock %}
@@ -9,6 +9,7 @@
 
 {% else %}
 
+<h1>Add Letter</h1>
 <form action="/contrib/letter/add/" method="post">
     {% csrf_token %}
     {{ form }}
