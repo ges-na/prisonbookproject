@@ -16,10 +16,18 @@ def redirect_to_admin(request):
     return HttpResponseRedirect("/admin")
 
 
+def redirect_to_contrib_profile(request):
+    return HttpResponseRedirect("/contrib/profile")
+
+
+def contrib_logout(request):
+    return render(request, "contributors/logout.html")
+
+
 def contrib_letter_form(request):
+    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
+        return redirect("/accounts/login/")
     if request.method == "POST":
-        if not request.user.is_authenticated or not request.user.is_contributor:
-            return redirect("/accounts/login/")
         form = ContribLetterForm(request.POST)
         if form.is_valid():
             form.save(request.user)
@@ -30,9 +38,9 @@ def contrib_letter_form(request):
 
 
 def contrib_person_form(request):
+    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
+        return redirect("/accounts/login/")
     if request.method == "POST":
-        if not request.user.is_authenticated or not request.user.is_contributor:
-            return redirect("/accounts/login/")
         form = ContribPersonForm(request.POST)
         if form.is_valid():
             form.save(request.user)
@@ -43,6 +51,8 @@ def contrib_person_form(request):
 
 
 def contrib_profile(request):
+    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
+        return redirect("/accounts/login/")
     context = {
         "letters": Letter.objects.filter(created_by=request.user).order_by("created_date"),
         "people": Person.objects.filter(created_by=request.user).order_by("created_date"),

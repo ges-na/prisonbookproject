@@ -19,3 +19,45 @@
   align-items: center;
 }
 
+.link-button {
+  background: none!important;
+  border: none;
+  color: var(--color-mint);
+  text-decoration: none;
+  cursor: pointer;
+  padding: inherit;
+  font-size: inherit;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+select {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  padding: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.data-header {
+  font-weight: 600;
+}
+
+.letter-row {
+  display: grid;
+  grid-template-columns: 150px 150px 150px 150px;
+  padding: 10px;
+  column-gap: 10px;
+}
+
+.person-row {
+  display: grid;
+  grid-template-columns: 100px 200px 150px 150px 150px;
+  padding: 10px;
+  column-gap: 10px;
+}

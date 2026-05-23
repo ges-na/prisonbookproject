@@ -4,5 +4,9 @@
     <a href="{% url 'contrib_letter_add' %}">Add Letter</a>
     <a href="{% url 'contrib_person_add' %}">Add Person</a>
     <a href="{% url 'contrib_profile' %}">Profile</a>
+    <form action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="link-button">Logout</button>
+    </form>
   </nav>
 </header>

@@ -10,16 +10,29 @@
 {% else %}
   <div>
     <h1>Letters Added</h1>
-    <div>
-    {% for letter in letters %}
-      {% include "contributors/letter.html" with letter=letter %}
-    {% endfor %}
+    <div class="contrib-container">
+      <div class="letter-row">
+        <div class="data-header">Person</div>
+        <div class="data-header">Postmark Date</div>
+        <div class="data-header">Created Date</div>
+        <div class="data-header">Notes</div>
+      </div>
+      {% for letter in letters %}
+        {% include "contributors/letter.html" with letter=letter %}
+      {% endfor %}
     </div>
   </div>
 
   <div>
     <h1>People Added</h1>
-    <div>
+    <div class="contrib-container">
+      <div class="person-row">
+        <div class="data-header">Inmate Number</div>
+        <div class="data-header">Name</div>
+        <div class="data-header">Current Prison</div>
+        <div class="data-header">Created Date</div>
+        <div class="data-header">Notes</div>
+      </div>
     {% for person in people %}
       {% include "contributors/person.html" with person=person %}
     {% endfor %}
