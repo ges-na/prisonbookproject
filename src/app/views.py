@@ -17,6 +17,8 @@ def index(request):
 
 
 def redirect_to_admin(request):
+    if request.user.is_authenticated and request.user.is_contributor:
+        return HttpResponseRedirect("/contrib/profile")
     return HttpResponseRedirect("/admin")
 
 

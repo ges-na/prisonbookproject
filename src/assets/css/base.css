@@ -55,23 +55,26 @@ main {
 }
 
 a {
-  color: var(--color-mint);
+  color: var(--color-plum);
   text-decoration: none;
 }
 
 a:visited {
-  color: var(--color-mint);
+  color: var(--color-plum);
   text-decoration: none;
 }
 
-a.on-light {
-  color: var(--color-plum);
+.contrib-links a {
+  color: var(--color-mint)
 }
-
-a:visited.on-light {
-  color: var(--color-plum);
-}
-
+/* a.on-light { */
+/*   color: var(--color-plum); */
+/* } */
+/**/
+/* a:visited.on-light { */
+/*   color: var(--color-plum); */
+/* } */
+/**/
 textarea {
   background: #ffffff;
   color: #111827;
