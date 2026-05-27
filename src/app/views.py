@@ -21,7 +21,19 @@ def redirect_to_admin(request):
 
 
 def redirect_to_contrib_profile(request):
+    if not request.user or not request.user.is_authenticated:
+        return redirect("/accounts/login/")
+    elif not request.user.is_contributor:
+        return HttpResponseRedirect("/contrib/not_contributor")
     return HttpResponseRedirect("/contrib/profile")
+
+
+def not_contributor(request):
+    if not request.user or not request.user.is_authenticated:
+        return redirect("/accounts/login/")
+    if request.user.is_contributor:
+        return HttpResponseRedirect("/contrib/profile")
+    return render(request, "contributors/not_contributor.html")
 
 
 def contrib_logout(request):
@@ -92,8 +104,11 @@ def contrib_add_problem_note_form(
 
 
 def contrib_profile(request):
-    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
+    # TODO: make decorator for contributor perms check
+    if not request.user or not request.user.is_authenticated:
         return redirect("/accounts/login/")
+    elif not request.user.is_contributor:
+        return redirect("/contrib/not_contributor")
     context = {
         "letters": Letter.objects.filter(created_by=request.user).order_by("created_date"),
         "people": Person.objects.filter(created_by=request.user).order_by("created_date"),
@@ -143,5 +158,4 @@ class RegistrationView(Dj_Reg):
             context=context,
             request=self.request,
         )
-        breakpoint()
         user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)

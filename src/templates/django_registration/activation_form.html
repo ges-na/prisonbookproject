@@ -3,5 +3,12 @@
 {{ form.media }}
 {% endblock %}
 {% block content %}
-<div>This site is not accepting registrations at this time.</div>
+<h1>Activate Account</h1>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form }}
+  <button type="submit">Submit</button>
+</form>
+
 {% endblock %}

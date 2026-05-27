@@ -9,4 +9,6 @@
     {{ form }}
     <input type="submit" value="Submit">
 </form>
+<div><a href="{% url 'password_reset' %}">Forgot password?</a></div>
+<div><a href="{% url 'django_registration_register' %}">Create new account.</a></div>
 {% endblock %}

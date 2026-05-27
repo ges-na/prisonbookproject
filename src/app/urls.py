@@ -6,6 +6,7 @@ from src.app.views import (
     contrib_logout,
     contrib_person_form,
     contrib_profile,
+    not_contributor,
 )
 
 urlpatterns = [
@@ -16,4 +17,6 @@ urlpatterns = [
     ),
     path("contrib/profile/", contrib_profile, name="contrib_profile"),
     path("contrib/logout/", contrib_logout, name="contrib_logout"),
+    path("contrib/profile/", contrib_profile, name="contrib_profile"),
+    path("contrib/not_contributor/", not_contributor, name="not_contributor"),
 ]
