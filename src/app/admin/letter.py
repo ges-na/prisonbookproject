@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from ajax_select.admin import AjaxSelectAdmin
 from ajax_select import make_ajax_field
+from ajax_select.admin import AjaxSelectAdmin
 from django.contrib import admin
 from django.forms import ModelForm, ValidationError
 from django.urls import reverse
@@ -15,20 +15,29 @@ from src.app.utils import render_address_template
 
 
 class LetterForm(ModelForm):
-
     person = make_ajax_field(Letter, "person", "person_channel")
 
     class Meta:
         model = Letter
-        fields = ["person", "postmark_date", "stage1_complete_date", "workflow_stage", "counts_against_last_served", "notes"]
+        fields = [
+            "person",
+            "postmark_date",
+            "stage1_complete_date",
+            "workflow_stage",
+            "counts_against_last_served",
+            "notes",
+        ]
 
     def clean_person(self):
         if person := self.cleaned_data.get("person"):
             if person.current_prison:
                 return person
             else:
-                raise ValidationError(f"Adding a person to a letter requires that person to have a current_prison. Please add current prison value to {person.inmate_number} {person.full_name} to create/update this letter.")
+                raise ValidationError(
+                    f"Adding a person to a letter requires that person to have a current_prison. Please add current prison value to {person.inmate_number} {person.full_name} to create/update this letter."
+                )
         raise ValidationError("You must add a person to create or update a letter.")
+
 
 class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
     form = LetterForm
@@ -68,11 +77,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         "counts_against_last_served",
         "notes",
     )
-    actions = (
-        "move_to_fulfilled",
-        "move_to_stage1_complete",
-        "move_to_discarded"
-    )
+    actions = ("move_to_fulfilled", "move_to_stage1_complete", "move_to_discarded")
 
     list_per_page = 50
 
@@ -88,9 +93,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         if not letter.person:
             # This is a problem, do something smarter here
             return
-        link = reverse(
-            "admin:app_person_change", kwargs={"object_id": letter.person.id}
-        )
+        link = reverse("admin:app_person_change", kwargs={"object_id": letter.person.id})
         return format_html("<a href={}>{}</a>", link, letter.person.last_name)
 
     setattr(person_list_display, "admin_order_field", "person__last_name")
@@ -108,9 +111,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
     def prison_sent_to_list_display(self, letter):
         if not letter.prison_sent_to:
             return
-        link = reverse(
-            "admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id}
-        )
+        link = reverse("admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id})
         return format_html("<a href={}>{}</a>", link, letter.prison_sent_to)
 
     @admin.action(description="Mark selected letters as Stage 1 Complete")
@@ -128,22 +129,40 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
         change = []
         for letter in queryset:
             if not letter.person:
-                link = reverse('admin:app_letter_change', query=[("id", letter.id)])
-                self.message_user(request, format_html("Letter <a href={} data-popup='yes'>{} - {}</a> not changed. There needs to be a person assigned to the letter for this operation.", link, letter.id, self.letter_name(letter)))
+                link = reverse("admin:app_letter_change", query=[("id", letter.id)])
+                self.message_user(
+                    request,
+                    format_html(
+                        "Letter <a href={} data-popup='yes'>{} - {}</a> not changed. There needs to be a person assigned to the letter for this operation.",
+                        link,
+                        letter.id,
+                        self.letter_name(letter),
+                    ),
+                )
                 continue
             else:
                 change.append(letter.id)
                 letter.prison_sent_to = letter.person.current_prison
                 letter.save()
-        queryset.filter(id__in=change).update(fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED)
+        queryset.filter(id__in=change).update(
+            fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED
+        )
 
     @admin.action(description="Mark selected letters as Discarded")
     def move_to_discarded(self, request, queryset):
         change = []
         for letter in queryset:
             if letter.workflow_stage == WorkflowStage.FULFILLED:
-                link = reverse('admin:app_letter_changelist', query=[("id", letter.id)])
-                self.message_user(request, format_html("Cannot mark Fulfilled letter as Discarded. Letter <a href={}>{} - {}</a> not changed.", link, letter.id, self.letter_name(letter)))
+                link = reverse("admin:app_letter_changelist", query=[("id", letter.id)])
+                self.message_user(
+                    request,
+                    format_html(
+                        "Cannot mark Fulfilled letter as Discarded. Letter <a href={}>{} - {}</a> not changed.",
+                        link,
+                        letter.id,
+                        self.letter_name(letter),
+                    ),
+                )
             else:
                 change.append(letter.id)
         queryset.filter(id__in=change).update(workflow_stage=WorkflowStage.DISCARDED)

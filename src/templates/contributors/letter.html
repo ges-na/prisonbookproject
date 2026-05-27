@@ -2,5 +2,5 @@
   <div class="field">{% include "contributors/person_name.html" with person=letter.person %}</div>
   <div class="field">{{letter.postmark_date}}</div>
   <div class="field">{{letter.created_date}}</div>
-  <div class="field">{{letter.notes}}</div>
+  <div class="field"><a href="{% url 'contrib_problem_note_add' %}{% querystring letter=letter.id %}">Report problem</a></div>
 </div>

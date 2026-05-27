@@ -149,8 +149,12 @@ STATICFILES_FINDERS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REGISTRATION_OPEN = True
 ACCOUNT_ACTIVATION_DAYS = 3
+# TODO: env var
+DEFAULT_FROM_EMAIL = "hello@pghprisonbookproject.org"
+DOMAIN = os.environ.get("DOMAIN")
+
 EMAIL_HOST = "smtp.sparkpostmail.com"
 EMAIL_PORT = 587
 EMAIL_HOST_USER = "SMTP_Injection"
-EMAIL_HOST_PASSWORD = "YOUR API KEY"
+EMAIL_HOST_PASSWORD = os.environ.get("SPARKPOST_API_KEY")
 EMAIL_USE_TLS = True

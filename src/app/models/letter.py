@@ -50,6 +50,8 @@ class Letter(models.Model):
     )
     modified_date = models.DateTimeField(auto_now=True)
 
+    id: int
+
     def __str__(self):
         if not self.person:
             return f"NO PERSON - {self.postmark_date}"

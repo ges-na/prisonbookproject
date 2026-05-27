@@ -89,7 +89,8 @@ textarea:focus {
 }
 
 textarea::placeholder {
-  color: var(--color-background);
+  color: grey;
+  font-style: italic;
 }
 
 input {
@@ -108,6 +109,7 @@ input[type=submit] {
   background: var(--color-plum);
   color: white;
 }
+
 input[type=submit]:hover {
   background: var(--color-plum);
   color: white;
@@ -127,4 +129,23 @@ input[type=submit]:hover {
 .stat-value {
   color: var(--color-primary);
   font-size: 20px;
+}
+
+/* Messages */
+
+.close-on-check {
+  padding: 1em;
+  padding: 4px 8px;
+  border-radius: 3px;
+  background-color: var(--color-green);
+  cursor: pointer;
+}
+
+
+.close-on-check:hover {
+  background-color: var(--color-peach);
+}
+
+input[type=checkbox]:checked + .close-on-check {
+  display: none;
 }

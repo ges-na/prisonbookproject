@@ -15,7 +15,7 @@
         <div class="data-header">Person</div>
         <div class="data-header">Postmark Date</div>
         <div class="data-header">Created Date</div>
-        <div class="data-header">Notes</div>
+        <div class="data-header">Report problem</div>
       </div>
       {% for letter in letters %}
         {% include "contributors/letter.html" with letter=letter %}
@@ -31,7 +31,6 @@
         <div class="data-header">Name</div>
         <div class="data-header">Current Prison</div>
         <div class="data-header">Created Date</div>
-        <div class="data-header">Notes</div>
       </div>
     {% for person in people %}
       {% include "contributors/person.html" with person=person %}

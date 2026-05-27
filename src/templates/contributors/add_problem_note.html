@@ -5,11 +5,11 @@
 {% block content %}
 {% if not user.is_authenticated or not user.is_contributor %}
 
-<span>hi</span>
+<span>TODO</span>
 
 {% else %}
-<h1>Add Letter</h1>
-<form action="/contrib/letter/add/" method="post">
+<h1>Add Note</h1>
+<form action="/contrib/problem_note/add/" method="post">
     {% csrf_token %}
     {{ form }}
     <input type="submit" value="Submit">
