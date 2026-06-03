@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from src.auth.models import User
 from django.db import models
 from django.db.models.query import QuerySet
 from django.urls import reverse
@@ -12,6 +11,7 @@ from django.utils.html import format_html
 from django.utils.timezone import make_aware
 
 from src.app.utils import WorkflowStage
+from src.auth.models import User
 
 if TYPE_CHECKING:
     from src.app.models.letter import Letter
@@ -21,7 +21,6 @@ ELIGIBILITY_INTERVAL_DAYS = 90
 
 
 class PersonQuerySet(models.QuerySet):
-
     def has_letters(self):
         return self.filter(letter__isnull=False)
 
@@ -31,11 +30,16 @@ class PersonQuerySet(models.QuerySet):
 
     def eligible(self):
         # Exclude people with letters with fulfilled_date within ELIGIBILITY_INTERVAL_DAYS
-        return self.exclude(letter__fulfilled_date__gt=datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS))
+        return self.exclude(
+            letter__fulfilled_date__gt=datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS)
+        )
 
     def not_eligible(self):
         # People with letters with fulfilled_date within ELIGIBILITY_INTERVAL_DAYS
-        return self.filter(letter__fulfilled_date__gt=datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS))
+        return self.filter(
+            letter__fulfilled_date__gt=datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS)
+        )
+
 
 class Person(models.Model):
     class Statuses(models.TextChoices):
@@ -58,7 +62,6 @@ class Person(models.Model):
     )
     modified_date = models.DateTimeField(auto_now=True)
 
-    id: int
     prisons: QuerySet[PersonPrison]
     letter_set: QuerySet[Letter]
     objects = PersonQuerySet.as_manager()
@@ -81,7 +84,7 @@ class Person(models.Model):
 
     @property
     def full_name(self) -> str:
-         return f"{self.first_name} {self.middle_name if self.middle_name else ''} {self.last_name}{' ' + self.name_suffix if self.name_suffix else ''}"
+        return f"{self.first_name} {self.middle_name if self.middle_name else ''} {self.last_name}{' ' + self.name_suffix if self.name_suffix else ''}"
 
     @cached_property
     def last_served(self):
@@ -126,16 +129,14 @@ class Person(models.Model):
         return self.all_letters.count()
 
     def get_name_str(self):
-        return f"{self.first_name} {self.middle_name + " " if self.middle_name else ""}{self.last_name}{" " + self.name_suffix if self.name_suffix else ""}"
+        return f"{self.first_name} {self.middle_name + ' ' if self.middle_name else ''}{self.last_name}{' ' + self.name_suffix if self.name_suffix else ''}"
 
     @property
     def eligible(self) -> bool:
         if not self.has_been_served:
             return True
         assert self.last_served
-        cooldown_interval = make_aware(
-            (datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS))
-        )
+        cooldown_interval = make_aware((datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS)))
         return self.last_served <= cooldown_interval
 
     def get_eligibility_str(self, links: bool = True) -> str:
@@ -144,7 +145,7 @@ class Person(models.Model):
             if links:
                 pending_letters_string = format_html(
                     "<a href={}?person={}&workflow_stage__in={}>{}</a>",
-                    reverse('admin:app_letter_changelist'),
+                    reverse("admin:app_letter_changelist"),
                     self.id,
                     WorkflowStage.STAGE1_COMPLETE,
                     f"{self.pending_letter_count} letters pending",
@@ -154,11 +155,13 @@ class Person(models.Model):
         if not self.eligible:
             assert self.last_served
             eligible_dt = self.last_served + timedelta(days=ELIGIBILITY_INTERVAL_DAYS)
-            eligible_date_str = eligible_dt.strftime('%B %-d, %Y')
+            eligible_date_str = eligible_dt.strftime("%B %-d, %Y")
             if not self.has_pending_letters:
                 return f"Eligible after {eligible_date_str}"
             elif pending_letters_string:
-                return format_html("Eligible after {}; {}", eligible_date_str, pending_letters_string)
+                return format_html(
+                    "Eligible after {}; {}", eligible_date_str, pending_letters_string
+                )
             else:
                 # Should not happen, doesn't need to blow up
                 return "Error finding eligibility; please report"

@@ -4,6 +4,7 @@ from ajax_select import make_ajax_field
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
+from django_registration.forms import RegistrationForm as DjRegistrationForm
 
 from src.app.admin.letter import LetterForm
 from src.app.admin.person import PersonAdminForm
@@ -30,18 +31,20 @@ class ContribLetterForm(LetterForm):
             ),
         }
 
-    def save(self, user):  # type: ignore
+    def __init__(self, user: User):
+        super().__init__()
+        self.user = user
+
+    def save(self, commit=True):
         letter = super().save()
-        letter.created_by = user
+        letter.created_by = self.user
         letter.save()
         if note := self.cleaned_data.get("notes"):
-            problem_note = ProblemNote(letter=letter, note=note, created_by=user)
+            problem_note = ProblemNote(letter=letter, note=note, created_by=self.user)
             problem_note.save()
 
 
 class ContribPersonForm(PersonAdminForm):
-    prison = forms.ModelChoiceField(queryset=Prison.objects.all().order_by("name"))
-
     class Meta(PersonAdminForm.Meta):
         model = Person
         fields = [
@@ -64,17 +67,23 @@ class ContribPersonForm(PersonAdminForm):
             ),
         }
 
-    def save(self, user):  # type: ignore
+    prison = forms.ModelChoiceField(queryset=Prison.objects.all().order_by("name"))
+
+    def __init__(self, user: User):
+        super().__init__()
+        self.user = user
+
+    def save(self, commit=True):
         person = super().save()
-        person.created_by = user
+        person.created_by = self.user
         person.save()
         data = self.cleaned_data
         person_prison = PersonPrison(
-            person=person, prison=data["prison"], created_date=datetime.now(), created_by=user
+            person=person, prison=data["prison"], created_date=datetime.now(), created_by=self.user
         )
         person_prison.save()
         if note := self.cleaned_data.get("notes"):
-            problem_note = ProblemNote(person=person, note=note, created_by=user)
+            problem_note = ProblemNote(person=person, note=note, created_by=self.user)
             problem_note.save()
 
 
@@ -95,14 +104,26 @@ class ContribProblemNoteForm(ModelForm):
             "person": forms.HiddenInput(),
         }
 
-    def save(self, user: User, *args, **kwargs):
-        # TODO var names
-        for thing in ["letter", "person"]:
-            if thing_value := self.cleaned_data.get(thing):
-                if not thing_value.created_by == user:
+    def __init__(self, user: User):
+        super().__init__()
+        self.user = user
+
+    def save(self, commit=True):
+        for note_type in ["letter", "person"]:
+            if note_value := self.cleaned_data.get(note_type):
+                if not note_value.created_by == self.user:
                     raise ValidationError(
-                        f"User is not the creator of this {thing}, cannot add note."
+                        f"User is not the creator of this {note_type}, cannot add note."
                     )
         note = super().save()
-        note.created_by = user
+        note.created_by = self.user
         note.save()
+
+
+class RegistrationForm(DjRegistrationForm):
+    class Meta(DjRegistrationForm.Meta):
+        fields = DjRegistrationForm.Meta.fields + ["first_name", "last_name"]
+
+    def clean(self):
+        super().clean()
+        self.cleaned_data["email"] = self.cleaned_data["email"].lower()

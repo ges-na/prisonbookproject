@@ -39,7 +39,7 @@ class LetterForm(ModelForm):
         raise ValidationError("You must add a person to create or update a letter.")
 
 
-class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):
+class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
     form = LetterForm
     list_display = (
         "letter_name",

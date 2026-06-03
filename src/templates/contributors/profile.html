@@ -1,13 +1,6 @@
 {% extends "contributors/contrib_base.html" %}
-{% block extra_header %}
-{{ form.media }}
-{% endblock %}
+
 {% block content %}
-{% if not user.is_authenticated or not user.is_contributor %}
-
-<span>hi</span>
-
-{% else %}
   <div>
     <h1>Letters Added</h1>
     <div class="contrib-container">
@@ -18,7 +11,7 @@
         <div class="data-header">Report problem</div>
       </div>
       {% for letter in letters %}
-        {% include "contributors/letter.html" with letter=letter %}
+        {% include "contributors/letter_row.html" with letter=letter %}
       {% endfor %}
     </div>
   </div>
@@ -33,10 +26,9 @@
         <div class="data-header">Created Date</div>
       </div>
     {% for person in people %}
-      {% include "contributors/person.html" with person=person %}
+      {% include "contributors/person_row.html" with person=person %}
     {% endfor %}
     </div>
   </div>
 
-{% endif %}
 {% endblock %}

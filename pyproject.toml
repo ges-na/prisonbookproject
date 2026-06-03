@@ -26,8 +26,8 @@ dependencies = [
 "django-registration (>=5.2.1,<6.0.0)",
 "urllib3 (==2.7.0)"]
 
-[project.group.dev]
-dependencies = [
+[dependency-groups]
+dev = [
 "pyright>=1.1.400",
 "django-stubs==5.2.9",
 "django-stubs-ext==5.2.9",
@@ -35,7 +35,10 @@ dependencies = [
 "isort>=7.0.0",
 "pyright>=1.1.407",
 "ruff==0.15.14",
-"typing-extensions=4.15.0"]
+"typing-extensions==4.15.0"]
+
+[project.group.dev]
+optional = true
 
 [tool.isort]
 profile = "black"

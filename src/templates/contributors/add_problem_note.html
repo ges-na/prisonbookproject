@@ -1,13 +1,11 @@
 {% extends "contributors/contrib_base.html" %}
+
 {% block extra_header %}
 {{ form.media }}
 {% endblock %}
+
 {% block content %}
-{% if not user.is_authenticated or not user.is_contributor %}
 
-<span>TODO</span>
-
-{% else %}
 <h1>Add Note</h1>
 <form action="/contrib/problem_note/add/" method="post">
     {% csrf_token %}
@@ -15,5 +13,4 @@
     <input type="submit" value="Submit">
 </form>
 
-{% endif %}
 {% endblock %}

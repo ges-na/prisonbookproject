@@ -1,40 +1,46 @@
-# from backdate_form import BackdateForm
+from functools import wraps
+from typing import Callable
+
 from django.conf import settings
 from django.contrib import messages
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
-from django.template.loader import render_to_string
 from django_registration.backends.activation.views import RegistrationView as Dj_Reg
 
-from src.app.forms import ContribLetterForm, ContribPersonForm, ContribProblemNoteForm
+from src.app.forms import (
+    ContribLetterForm,
+    ContribPersonForm,
+    ContribProblemNoteForm,
+    RegistrationForm,
+)
 from src.app.models.letter import Letter
 from src.app.models.person import Person
 
 
-def index(request):
-    print("INDEX BAY-BEEEE")
-    return HttpResponse("<html><body>hi there</body></html>")
+def check_auth(func: Callable) -> Callable:
+    """
+    No user / user not logged in: redirect to login
+    Non-contrib, non-staff user: send to non_contributor page
+    """
+
+    @wraps(func)
+    def wrapper(request):
+        if not request.user or not request.user.is_authenticated:
+            return redirect("/accounts/login")
+        elif not request.user.is_contributor and not request.user.is_staff:
+            return redirect("/contrib/not_contributor")
+
+    return wrapper
 
 
 def redirect_to_admin(request):
-    if request.user.is_authenticated and request.user.is_contributor:
-        return HttpResponseRedirect("/contrib/profile")
+    """
+    Redirect base URL to admin site.
+    """
     return HttpResponseRedirect("/admin")
 
 
-def redirect_to_contrib_profile(request):
-    if not request.user or not request.user.is_authenticated:
-        return redirect("/accounts/login/")
-    elif not request.user.is_contributor:
-        return HttpResponseRedirect("/contrib/not_contributor")
-    return HttpResponseRedirect("/contrib/profile")
-
-
 def not_contributor(request):
-    if not request.user or not request.user.is_authenticated:
-        return redirect("/accounts/login/")
-    if request.user.is_contributor:
-        return HttpResponseRedirect("/contrib/profile")
     return render(request, "contributors/not_contributor.html")
 
 
@@ -42,43 +48,40 @@ def contrib_logout(request):
     return render(request, "contributors/logout.html")
 
 
+@check_auth
 def contrib_letter_form(request):
-    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
-        return redirect("/accounts/login/")
     if request.method == "POST":
         form = ContribLetterForm(request.POST)
         if form.is_valid():
-            form.save(request.user)
+            form.save()
             messages.success(request, "Letter created.")
             return redirect("contrib_letter_add")
     else:
-        form = ContribLetterForm()
+        form = ContribLetterForm(request.user)
     return render(request, "contributors/add_letter.html", {"form": form})
 
 
+@check_auth
 def contrib_person_form(request):
-    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
-        return redirect("/accounts/login/")
     if request.method == "POST":
         form = ContribPersonForm(request.POST)
         if form.is_valid():
-            form.save(request.user)
+            form.save()
             messages.success(request, "Person created.")
             return redirect("contrib_person_add")
     else:
-        form = ContribPersonForm()
+        form = ContribPersonForm(request.user)
     return render(request, "contributors/add_person.html", {"form": form})
 
 
+@check_auth
 def contrib_add_problem_note_form(
     request, letter: Letter | None = None, person: Person | None = None
 ):
-    if not request.user or not request.user.is_authenticated or not request.user.is_contributor:
-        return redirect("/accounts/login/")
     if request.method == "POST":
-        form = ContribProblemNoteForm(request.POST)
+        form = ContribProblemNoteForm(request.user)
         if form.is_valid():
-            form.save(request.user)
+            form.save()
             messages.success(request, "Note added.")
             return redirect("contrib_profile")
     else:
@@ -97,7 +100,7 @@ def contrib_add_problem_note_form(
                 f"You do not have permission to add a note to this {'letter' if letter else 'person'}.",
             )
             return redirect("contrib_profile")
-        form = ContribProblemNoteForm(initial=initial)
+        form = ContribProblemNoteForm(request.user)
     return render(
         request,
         "contributors/add_problem_note.html",
@@ -105,12 +108,8 @@ def contrib_add_problem_note_form(
     )
 
 
+@check_auth
 def contrib_profile(request):
-    # TODO: make decorator for contributor perms check
-    if not request.user or not request.user.is_authenticated:
-        return redirect("/accounts/login/")
-    elif not request.user.is_contributor:
-        return redirect("/contrib/not_contributor")
     context = {
         "letters": Letter.objects.filter(created_by=request.user).order_by("created_date"),
         "people": Person.objects.filter(created_by=request.user).order_by("created_date"),
@@ -119,6 +118,8 @@ def contrib_profile(request):
 
 
 class RegistrationView(Dj_Reg):
+    form_class = RegistrationForm
+
     def get_email_context(self, activation_key):
         """
         Returns a dictionary of values to be used as template context when generating the
@@ -135,29 +136,3 @@ class RegistrationView(Dj_Reg):
             "expiration_days": settings.ACCOUNT_ACTIVATION_DAYS,
             "domain": settings.DOMAIN,
         }
-
-    def send_activation_email(self, user):
-        """
-        Given an inactive user account, generates and sends the activation email for that
-        account.
-
-        :param django.contrib.auth.models.AbstractUser user: The new user account.
-        :rtype: None
-
-        """
-        activation_key = self.get_activation_key(user)
-        context = self.get_email_context(activation_key)
-        context["user"] = user
-        subject = render_to_string(
-            template_name=self.email_subject_template,
-            context=context,
-            request=self.request,
-        )
-        # Force subject to a single line to avoid header-injection issues.
-        subject = "".join(subject.splitlines())
-        message = render_to_string(
-            template_name=self.email_body_template,
-            context=context,
-            request=self.request,
-        )
-        user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)

@@ -3,7 +3,11 @@ from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import include, path
 
-from src.app.views import RegistrationView, redirect_to_admin, redirect_to_contrib_profile
+from src.app.views import (
+    RegistrationView,
+    contrib_profile,
+    redirect_to_admin,
+)
 from src.viz.urls import urlpatterns
 
 urlpatterns = [
@@ -18,7 +22,7 @@ urlpatterns = [
     ),
     path("accounts/", include("django_registration.backends.activation.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
-    path("accounts/profile/", redirect_to_contrib_profile),
+    path("accounts/profile/", contrib_profile),
     path("", include("src.app.urls")),
     path("logout/", LogoutView.as_view(next_page="contrib_logout"), name="logout"),
 ]

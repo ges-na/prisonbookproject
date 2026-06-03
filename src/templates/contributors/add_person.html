@@ -1,21 +1,10 @@
 {% extends "contributors/contrib_base.html" %}
+
 {% block extra_header %}
 {{ form.media }}
 {% endblock %}
+
 {% block content %}
-{% if not user.is_authenticated or not user.is_contributor %}
-
-<span>TODO</span>
-
-{% else %}
-
-{% if messages %}
-<div class="messages">
-    {% for message in messages %}
-    <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</div>
-    {% endfor %}
-</div>
-{% endif %}
 
 <h1>Add Person</h1>
 <form action="/contrib/person/add/" method="post">
@@ -24,5 +13,4 @@
     <input type="submit" value="Submit">
 </form>
 
-{% endif %}
 {% endblock %}
