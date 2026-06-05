@@ -10,6 +10,7 @@ from src.app.views import (
 )
 
 urlpatterns = [
+    path("contrib/", contrib_profile, name="contrib_base"),
     path("contrib/letter/add/", contrib_letter_form, name="contrib_letter_add"),
     path("contrib/person/add/", contrib_person_form, name="contrib_person_add"),
     path(

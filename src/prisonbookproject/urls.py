@@ -4,6 +4,8 @@ from django.contrib.auth.views import LogoutView
 from django.urls import include, path
 
 from src.app.views import (
+    LoginView,
+    PasswordResetView,
     RegistrationView,
     contrib_profile,
     redirect_to_admin,
@@ -19,6 +21,16 @@ urlpatterns = [
         "accounts/register/",
         RegistrationView.as_view(),
         name="django_registration_register",
+    ),
+    path(
+        "accounts/login/",
+        LoginView.as_view(),
+        name="django_login",
+    ),
+    path(
+        "accounts/password_reset/",
+        PasswordResetView.as_view(),
+        name="django_login",
     ),
     path("accounts/", include("django_registration.backends.activation.urls")),
     path("accounts/", include("django.contrib.auth.urls")),

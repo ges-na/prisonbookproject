@@ -41,6 +41,11 @@ class Letter(models.Model):
         default=WorkflowStage.STAGE1_COMPLETE,
     )
     notes = models.TextField(blank=True)
+
+    ##################
+    # Record history #
+    ##################
+
     created_date = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User,
@@ -49,6 +54,21 @@ class Letter(models.Model):
         on_delete=models.SET_NULL,
     )
     modified_date = models.DateTimeField(auto_now=True)
+
+    #####################
+    # Returned/Refilled #
+    #####################
+
+    class FulfillmentEvents(models.TextChoices):
+        RETURNED = "returned", "Returned"
+        REFULFILLED = "refulfilled", "Refulfilled"
+
+    fulfillment_events = models.CharField(
+        max_length=200, choices=FulfillmentEvents.choices, blank=True
+    )
+    returned_date = models.DateTimeField(null=True, blank=True)
+    refulfilled_date = models.DateTimeField(null=True, blank=True)
+    fulfillment_event_notes = models.TextField(blank=True)
 
     def __str__(self):
         if not self.person:

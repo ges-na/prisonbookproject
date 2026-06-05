@@ -3,11 +3,14 @@ from django.db import models
 
 NO_PRISON_STR = "Not in custody"
 
+
 class WorkflowStage(models.TextChoices):
     STAGE1_COMPLETE = "stage1_complete", "Stage 1 complete"
     FULFILLED = "fulfilled", "Fulfilled"
     PROBLEM = "problem", "Problem"
     DISCARDED = "discarded", "Discarded"
+    RETURNED = "returned", "Returned"
+    REFULFILLED = "refulfilled", "Refulfilled"
 
 
 def render_address_template(

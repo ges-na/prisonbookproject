@@ -2,11 +2,16 @@ from datetime import datetime
 
 from ajax_select import make_ajax_field
 from django import forms
+from django.contrib.auth.forms import (
+    AuthenticationForm as DjAuthenticationForm,
+    PasswordResetForm as DjPasswordResetForm,
+)
 from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
+from django.views.decorators.debug import sensitive_variables
 from django_registration.forms import RegistrationForm as DjRegistrationForm
 
-from src.app.admin.letter import LetterForm
+from src.app.admin.letter import LetterAdminForm
 from src.app.admin.person import PersonAdminForm
 from src.app.models.letter import Letter
 from src.app.models.person import Person
@@ -14,11 +19,13 @@ from src.app.models.prison import PersonPrison, Prison
 from src.app.models.problem_note import ProblemNote
 from src.auth.models import User
 
+# TODO: split into different files
 
-class ContribLetterForm(LetterForm):
+
+class ContribLetterForm(LetterAdminForm):
     person = make_ajax_field(Letter, "person", "person_contrib_channel")
 
-    class Meta(LetterForm.Meta):
+    class Meta(LetterAdminForm.Meta):
         model = Letter
         fields = ["person", "postmark_date", "notes"]
         widgets = {
@@ -65,6 +72,16 @@ class ContribPersonForm(PersonAdminForm):
                     "placeholder": "Only fill this out if there is a problem that needs review by PPBP staff.",
                 },
             ),
+            "middle_name": forms.TextInput(
+                attrs={
+                    "placeholder": "Optional",
+                },
+            ),
+            "name_suffix": forms.TextInput(
+                attrs={
+                    "placeholder": "Optional",
+                },
+            ),
         }
 
     prison = forms.ModelChoiceField(queryset=Prison.objects.all().order_by("name"))
@@ -104,8 +121,8 @@ class ContribProblemNoteForm(ModelForm):
             "person": forms.HiddenInput(),
         }
 
-    def __init__(self, user: User):
-        super().__init__()
+    def __init__(self, user: User, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user = user
 
     def save(self, commit=True):
@@ -125,5 +142,19 @@ class RegistrationForm(DjRegistrationForm):
         fields = DjRegistrationForm.Meta.fields + ["first_name", "last_name"]
 
     def clean(self):
-        super().clean()
         self.cleaned_data["email"] = self.cleaned_data["email"].lower()
+        return super().clean()
+
+
+class AuthenticationForm(DjAuthenticationForm):
+    @sensitive_variables()
+    def clean(self):
+        self.cleaned_data["username"] = self.cleaned_data.get("username", "").lower()
+        return super().clean()
+
+
+class PasswordResetForm(DjPasswordResetForm):
+    @sensitive_variables()
+    def clean(self):
+        self.cleaned_data["username"] = self.cleaned_data.get("username", "").lower()
+        return super().clean()

@@ -3,14 +3,20 @@ from typing import Callable
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.views import (
+    LoginView as DjLoginView,
+    PasswordResetView as DjPasswordResetView,
+)
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django_registration.backends.activation.views import RegistrationView as Dj_Reg
 
 from src.app.forms import (
+    AuthenticationForm,
     ContribLetterForm,
     ContribPersonForm,
     ContribProblemNoteForm,
+    PasswordResetForm,
     RegistrationForm,
 )
 from src.app.models.letter import Letter
@@ -25,10 +31,13 @@ def check_auth(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(request):
+        # not authenticated; log in
         if not request.user or not request.user.is_authenticated:
             return redirect("/accounts/login")
+        # not a contributor or staff, needs permission
         elif not request.user.is_contributor and not request.user.is_staff:
             return redirect("/contrib/not_contributor")
+        return func(request)
 
     return wrapper
 
@@ -75,37 +84,32 @@ def contrib_person_form(request):
 
 
 @check_auth
-def contrib_add_problem_note_form(
-    request, letter: Letter | None = None, person: Person | None = None
-):
+def contrib_add_problem_note_form(request):
     if request.method == "POST":
-        form = ContribProblemNoteForm(request.user)
+        form = ContribProblemNoteForm(request.user, data=request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Note added.")
-            return redirect("contrib_profile")
+        else:
+            messages.error(request, "Invalid note.")
+        return redirect("contrib_profile")
     else:
         initial = {}
-        if letter_id := request.GET.get("letter"):
-            letter = Letter.objects.get(id=letter_id)
-            initial["letter"] = letter
-        elif person_id := request.GET.get("person"):
-            person = Person.objects.get(id=person_id)
-            initial["person"] = person
-        if (letter and not letter.created_by == request.user) or (
-            person and not person.created_by == request.user
-        ):
-            messages.error(
-                request,
-                f"You do not have permission to add a note to this {'letter' if letter else 'person'}.",
-            )
-            return redirect("contrib_profile")
-        form = ContribProblemNoteForm(request.user)
-    return render(
-        request,
-        "contributors/add_problem_note.html",
-        {"form": form},
-    )
+        for note_type, model in {"letter": Letter, "person": Person}.items():
+            if record_id := request.GET.get(note_type):
+                record = model.objects.get(id=record_id)
+                if not record.created_by == request.user:
+                    messages.error(
+                        request,
+                        f"You do not have permission to add a note to this {note_type}.",
+                    )
+                initial[note_type] = record
+        form = ContribProblemNoteForm(request.user, initial=initial)
+        return render(
+            request,
+            "contributors/add_problem_note.html",
+            {"form": form},
+        )
 
 
 @check_auth
@@ -136,3 +140,11 @@ class RegistrationView(Dj_Reg):
             "expiration_days": settings.ACCOUNT_ACTIVATION_DAYS,
             "domain": settings.DOMAIN,
         }
+
+
+class LoginView(DjLoginView):
+    form_class = AuthenticationForm
+
+
+class PasswordResetView(DjPasswordResetView):
+    form_class = PasswordResetForm

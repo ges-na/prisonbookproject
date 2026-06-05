@@ -14,9 +14,7 @@ from src.app.models.prison import Prison
 from src.app.utils import render_address_template
 
 
-class LetterForm(ModelForm):
-    person = make_ajax_field(Letter, "person", "person_channel")
-
+class LetterAdminForm(ModelForm):
     class Meta:
         model = Letter
         fields = [
@@ -27,6 +25,8 @@ class LetterForm(ModelForm):
             "counts_against_last_served",
             "notes",
         ]
+
+    person = make_ajax_field(Letter, "person", "person_channel")
 
     def clean_person(self):
         if person := self.cleaned_data.get("person"):
@@ -39,8 +39,17 @@ class LetterForm(ModelForm):
         raise ValidationError("You must add a person to create or update a letter.")
 
 
+class LetterChangeForm(LetterAdminForm):
+    class Meta(LetterAdminForm.Meta):
+        fields = LetterAdminForm.Meta.fields + [
+            "fulfillment_events",
+            "returned_date",
+            "refulfilled_date",
+            "fulfillment_event_notes",
+        ]
+
+
 class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
-    form = LetterForm
     list_display = (
         "letter_name",
         "workflow_stage",
@@ -79,7 +88,18 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
     )
     actions = ("move_to_fulfilled", "move_to_stage1_complete", "move_to_discarded")
 
-    list_per_page = 50
+    list_per_page = 25
+
+    def get_form(self, request, obj=None, **kwargs):
+        if not obj:
+            return LetterAdminForm
+        return LetterChangeForm
+
+    def get_fields(self, request, obj=None):
+        if obj:
+            return LetterChangeForm.Meta.fields
+        else:
+            return LetterAdminForm.Meta.fields
 
     def eligibility(self, letter):
         return letter.person.get_eligibility_str()
@@ -144,6 +164,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
                 change.append(letter.id)
                 letter.prison_sent_to = letter.person.current_prison
                 letter.save()
+        # TODO: make things tz aware
         queryset.filter(id__in=change).update(
             fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED
         )
