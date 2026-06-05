@@ -1,0 +1,14 @@
+{% extends "contributors/contrib_base.html" %}
+{% block extra_header %}
+{{ form.media }}
+{% endblock %}
+{% block content %}
+
+<form action="{% url 'login' %}" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit">
+</form>
+<div><a href="{% url 'password_reset' %}">Forgot password?</a></div>
+<div><a href="{% url 'django_registration_register' %}">Create new account.</a></div>
+{% endblock %}

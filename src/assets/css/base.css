@@ -1,3 +1,5 @@
+@import url("contrib.css");
+
 body {
   /* colors */
   --color-background: #505050;
@@ -8,6 +10,12 @@ body {
   --color-tan: #c47033;
   --color-peach: #fba165;
 
+  /* font */
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+
   /* functional */
   --color-content: #303030;
   --color-content-secondary: #404040;
@@ -17,24 +25,99 @@ body {
   background-color: var(--color-background);
   color: var(--color-content);
   display: flex;
+  min-width: 100px;
   flex-direction: column;
   align-items: center;
   width: 100%;
   height: 100%;
+  margin: 0;
+  gap: 10px;
 }
 
 header {
-  color: var(--color-peach);
+  color: white;
   width: 100%;
-  height: 40px;
+  height: 50px;
+}
+
+.header-title {
+  font-size: 25px;
 }
 
 h1 {
   margin: 0;
+  font-size: 20px;
 }
+
 main {
   padding: 10px;
   background-color: var(--color-section);
+}
+
+a {
+  color: var(--color-plum);
+  text-decoration: none;
+}
+
+a:visited {
+  color: var(--color-plum);
+  text-decoration: none;
+}
+
+.contrib-links a {
+  color: var(--color-mint)
+}
+/* a.on-light { */
+/*   color: var(--color-plum); */
+/* } */
+/**/
+/* a:visited.on-light { */
+/*   color: var(--color-plum); */
+/* } */
+/**/
+textarea {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  padding: 6px;
+  font-size: 14px;
+  outline: none;
+  resize: none;
+}
+
+textarea:focus {
+  border-color: var(--color-plum);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+textarea::placeholder {
+  color: grey;
+  font-style: italic;
+}
+
+input {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  padding: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  resize: none;
+}
+
+input[type=submit] {
+  background: var(--color-plum);
+  color: white;
+}
+
+input[type=submit]:hover {
+  background: var(--color-plum);
+  color: white;
+  border-color: var(--color-peach);
+  cursor: pointer;
 }
 
 .stat {
@@ -49,4 +132,23 @@ main {
 .stat-value {
   color: var(--color-primary);
   font-size: 20px;
+}
+
+/* Messages */
+
+.close-on-check {
+  padding: 1em;
+  padding: 4px 8px;
+  border-radius: 3px;
+  background-color: var(--color-green);
+  cursor: pointer;
+}
+
+
+.close-on-check:hover {
+  background-color: var(--color-peach);
+}
+
+input[type=checkbox]:checked + .close-on-check {
+  display: none;
 }

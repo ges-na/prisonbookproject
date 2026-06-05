@@ -1,0 +1,16 @@
+{% extends "contributors/contrib_base.html" %}
+
+{% block extra_header %}
+{{ form.media }}
+{% endblock %}
+
+{% block content %}
+
+<h1>Add Note</h1>
+<form action="/contrib/problem_note/add/" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit">
+</form>
+
+{% endblock %}

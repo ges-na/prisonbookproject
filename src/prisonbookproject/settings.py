@@ -9,8 +9,8 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+
 import os
-from pathlib import Path
 
 import environ
 
@@ -32,7 +32,7 @@ DEBUG = env("DEBUG")
 ENV_NAME = env("ENV_NAME")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
-CSRF_TRUSTED_ORIGINS = ["https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev"]
+CSRF_TRUSTED_ORIGINS = ["https://prisonbookproject.fly.dev", "https://ppbp-dev.fly.dev"]
 CORS_ALLOWED_ORIGINS = env.list("CORS_WHITELIST")
 CORS_ALLOW_CREDENTIALS = True
 SECRET_KEY = env("SECRET_KEY")
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+    "django_registration",
     "ajax_select",
     "import_export",
 ]
@@ -85,7 +86,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "src.prisonbookproject.context_processors.export_vars"
+                "src.prisonbookproject.context_processors.export_vars",
             ],
         },
     },
@@ -94,6 +95,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "src.prisonbookproject.wsgi.application"
 
+
+AUTH_USER_MODEL = "CustomAuth.User"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -144,3 +147,14 @@ STATICFILES_FINDERS = [
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+REGISTRATION_OPEN = True
+ACCOUNT_ACTIVATION_DAYS = 3
+# TODO: env var
+DEFAULT_FROM_EMAIL = "hello@pghprisonbookproject.org"
+DOMAIN = os.environ.get("DOMAIN")
+
+EMAIL_HOST = "smtp.sparkpostmail.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "SMTP_Injection"
+EMAIL_HOST_PASSWORD = os.environ.get("SPARKPOST_API_KEY")
+EMAIL_USE_TLS = True

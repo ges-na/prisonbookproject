@@ -1,0 +1,8 @@
+<div class="message">
+  <input hidden type="checkbox" id="{{index}}-flash" />
+  <div class="close-on-check">
+    <label for="{{index}}-flash" {% if message.tags %} class="{{ message.tags }}"{% endif %}>
+      {{ message }}
+    </label>
+  </div>
+</div>

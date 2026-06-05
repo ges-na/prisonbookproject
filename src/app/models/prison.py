@@ -1,5 +1,6 @@
-from django.contrib.auth.models import User
 from django.db import models
+
+from src.auth.models import User
 
 from ..utils import NO_PRISON_STR
 
@@ -48,8 +49,6 @@ class Prison(models.Model):
         on_delete=models.SET_NULL,
     )
 
-    id: int
-
     def __str__(self):
         return self.name
 
@@ -58,11 +57,9 @@ class Prison(models.Model):
 
 
 class PersonPrison(models.Model):
-    person = models.ForeignKey(
-        "Person", on_delete=models.CASCADE, related_name="prisons"
-    )
+    person = models.ForeignKey("Person", on_delete=models.CASCADE, related_name="prisons")
     prison = models.ForeignKey(
-            "Prison", on_delete=models.CASCADE, related_name="people", null=True, blank=True
+        "Prison", on_delete=models.CASCADE, related_name="people", null=True, blank=True
     )
     created_date = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(

@@ -1,0 +1,1 @@
+Activate your Pittsburgh Prison Book Project account: http://{{ domain }}{% url 'django_registration_activate' %}{% querystring activation_key=activation_key %}
