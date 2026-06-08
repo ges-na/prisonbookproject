@@ -46,6 +46,10 @@ class IssueAdmin(admin.ModelAdmin):
         "created_by",
     )
 
+    ordering = (
+        "resolved",
+        "-modified_date",
+    )
     list_display_links = ("issue",)
     list_filter = ("issue", "resolved")
 

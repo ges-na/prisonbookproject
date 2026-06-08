@@ -61,6 +61,10 @@ class PersonIssue(Issue):
     def clean(self):
         if self.issue == self.IssueTypes.OTHER and not self.additional_note:
             raise ValidationError("Issue type 'Other' requires a descriptive note.")
+        elif self.issue == self.IssueTypes.WRONG_PRISON and not self.additional_note:
+            raise ValidationError(
+                "Issue type 'Wrong Prison' requires a note specifying the correct prison."
+            )
 
 
 class LetterIssue(Issue):
@@ -98,3 +102,7 @@ class LetterIssue(Issue):
     def clean(self):
         if self.issue == self.IssueTypes.OTHER and not self.additional_note:
             raise ValidationError("Issue type 'Other' requires a descriptive note.")
+        elif self.issue == self.IssueTypes.WRONG_PRISON and not self.additional_note:
+            raise ValidationError(
+                "Issue type 'Wrong Prison' requires a note specifying the correct prison."
+            )

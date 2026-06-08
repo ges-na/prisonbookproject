@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
+from typing import OrderedDict
 
 import environ
 
@@ -48,7 +49,8 @@ INSTALLED_APPS = [
     "src.viz.apps.AppConfig",
     "src.auth.apps.AppConfig",
     "corsheaders",
-    "django.contrib.admin",
+    # "django.contrib.admin",
+    "src.app.apps.AdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -158,3 +160,9 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = "SMTP_Injection"
 EMAIL_HOST_PASSWORD = os.environ.get("SPARKPOST_API_KEY")
 EMAIL_USE_TLS = True
+
+APP_ORDER = OrderedDict(
+    [
+        ("app", ["Letter", "Person", "Prison"]),
+    ]
+)
