@@ -13,42 +13,54 @@ from django_registration.forms import RegistrationForm as DjRegistrationForm
 
 from src.app.admin.letter import LetterAdminForm
 from src.app.admin.person import PersonAdminForm
+from src.app.models.issue import LetterIssue, PersonIssue
 from src.app.models.letter import Letter
 from src.app.models.person import Person
 from src.app.models.prison import PersonPrison, Prison
-from src.app.models.problem_note import ProblemNote
 from src.auth.models import User
 
 # TODO: split into different files
+note_field = forms.Textarea(
+    attrs={
+        "rows": 3,
+        "cols": 40,
+        "placeholder": "Only fill this out if you need to describe an issue.",
+    },
+)
 
 
 class ContribLetterForm(LetterAdminForm):
-    person = make_ajax_field(Letter, "person", "person_contrib_channel")
-
     class Meta(LetterAdminForm.Meta):
         model = Letter
-        fields = ["person", "postmark_date", "notes"]
-        widgets = {
-            "notes": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "cols": 40,
-                    "placeholder": "Only fill this out if there is a problem that needs review by PPBP staff.",
-                },
-            ),
-        }
+        fields = ["person", "postmark_date", "issue", "notes"]
+        widgets = {"notes": note_field}
 
-    def __init__(self, user: User):
-        super().__init__()
+    person = make_ajax_field(Letter, "person", "person_contrib_channel")
+    issue = forms.ChoiceField(
+        choices=[("", "-----"), *LetterIssue.IssueTypes.choices], required=False
+    )
+
+    def __init__(self, user: User, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user = user
+
+    def clean_notes(self):
+        self.notes = self.cleaned_data.get("notes")
+        return ""
 
     def save(self, commit=True):
         letter = super().save()
         letter.created_by = self.user
         letter.save()
-        if note := self.cleaned_data.get("notes"):
-            problem_note = ProblemNote(letter=letter, note=note, created_by=self.user)
-            problem_note.save()
+        if issue := self.cleaned_data.get("issue"):
+            issue = LetterIssue.objects.create(
+                letter=letter,
+                issue=issue,
+                additional_note=self.notes,
+                created_by=self.user,
+                created_date=datetime.now(),
+            )
+            issue.save()
 
 
 class ContribPersonForm(PersonAdminForm):
@@ -61,17 +73,12 @@ class ContribPersonForm(PersonAdminForm):
             "middle_name",
             "name_suffix",
             "prison",
+            "issue",
             "notes",
         ]
         required_fields = ["inmate_number", "last_name", "first_name", "prison"]
         widgets = {
-            "notes": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "cols": 40,
-                    "placeholder": "Only fill this out if there is a problem that needs review by PPBP staff.",
-                },
-            ),
+            "notes": note_field,
             "middle_name": forms.TextInput(
                 attrs={
                     "placeholder": "Optional",
@@ -85,10 +92,17 @@ class ContribPersonForm(PersonAdminForm):
         }
 
     prison = forms.ModelChoiceField(queryset=Prison.objects.all().order_by("name"))
+    issue = forms.ChoiceField(
+        choices=[("", "-----"), *PersonIssue.IssueTypes.choices], required=False
+    )
 
-    def __init__(self, user: User):
-        super().__init__()
+    def __init__(self, user: User, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user = user
+
+    def clean_notes(self):
+        self.notes = self.cleaned_data.get("notes")
+        return ""
 
     def save(self, commit=True):
         person = super().save()
@@ -99,42 +113,74 @@ class ContribPersonForm(PersonAdminForm):
             person=person, prison=data["prison"], created_date=datetime.now(), created_by=self.user
         )
         person_prison.save()
-        if note := self.cleaned_data.get("notes"):
-            problem_note = ProblemNote(person=person, note=note, created_by=self.user)
-            problem_note.save()
+        if issue := self.cleaned_data.get("issue"):
+            issue = PersonIssue.objects.create(
+                person=person,
+                issue=issue,
+                additional_note=self.notes,
+                created_by=self.user,
+                created_date=datetime.now(),
+            )
+            issue.save()
 
 
-class ContribProblemNoteForm(ModelForm):
+class ContribIssueForm(ModelForm):
+    issue_type = ""
+
     class Meta:
-        model = ProblemNote
-        fields = ["note", "letter", "person"]
-        required_fields = ["note"]
+        abstract = True
+        fields = ["issue", "additional_note"]
+        required_fields = ["issue"]
         widgets = {
-            "notes": forms.Textarea(
+            "additional_note": forms.Textarea(
                 attrs={
                     "rows": 3,
                     "cols": 40,
                     "placeholder": "Only fill this out if there is a problem that needs review by PPBP staff.",
                 },
             ),
-            "letter": forms.HiddenInput(),
-            "person": forms.HiddenInput(),
         }
 
     def __init__(self, user: User, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
 
+    def clean_issue_type(self):
+        if issue_target := self.cleaned_data.get(self.issue_type):
+            if not issue_target.created_by == self.user:
+                raise ValidationError(
+                    f"User is not the creator of this {self.issue_type}, cannot add note."
+                )
+        return issue_target
+
     def save(self, commit=True):
-        for note_type in ["letter", "person"]:
-            if note_value := self.cleaned_data.get(note_type):
-                if not note_value.created_by == self.user:
-                    raise ValidationError(
-                        f"User is not the creator of this {note_type}, cannot add note."
-                    )
-        note = super().save()
-        note.created_by = self.user
-        note.save()
+        issue = super().save()
+        issue.created_by = self.user
+        issue.save()
+
+
+class ContribPersonIssueForm(ContribIssueForm):
+    issue_type = "person"
+
+    class Meta(ContribIssueForm.Meta):
+        model = PersonIssue
+        fields = [*ContribIssueForm.Meta.fields, "person"]
+        widgets = ContribIssueForm.Meta.widgets | {"person": forms.HiddenInput()}
+
+    def clean_person(self):
+        return self.clean_issue_type()
+
+
+class ContribLetterIssueForm(ContribIssueForm):
+    issue_type = "letter"
+
+    class Meta(ContribIssueForm.Meta):
+        model = LetterIssue
+        fields = [*ContribIssueForm.Meta.fields, "letter"]
+        widgets = ContribIssueForm.Meta.widgets | {"letter": forms.HiddenInput()}
+
+    def clean_letter(self):
+        return self.clean_issue_type()
 
 
 class RegistrationForm(DjRegistrationForm):

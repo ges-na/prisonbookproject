@@ -6,6 +6,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 
+from src.app.admin.issue import PersonIssueInline
 from src.app.models.person import Person
 from src.app.models.prison import PersonPrison, Prison
 from src.app.utils import NO_PRISON_STR, WorkflowStage
@@ -51,6 +52,7 @@ class PersonResource(resources.ModelResource):
             "letter_count",
             "package_count",
         )
+
 
 class PersonAdminForm(ModelForm):
     allow_empty_inmate = False
@@ -173,16 +175,17 @@ class PrisonListFilter(admin.SimpleListFilter):
             return queryset.filter(prisons__prison__id=None)
         return queryset.filter(prisons__prison__id=self.value())
 
+
 class EligibilityListFilter(admin.SimpleListFilter):
     title = "Eligibility"
     parameter_name = "eligibility"
 
     def lookups(self, request, model_admin):
         return [
-                ("true", "Eligible"),
-                ("false", "Not eligible"),
-                ("pending", "Eligible, letters pending"),
-                ]
+            ("true", "Eligible"),
+            ("false", "Not eligible"),
+            ("pending", "Eligible, letters pending"),
+        ]
 
     def queryset(self, request, queryset):
         if self.value() == "true":
@@ -193,10 +196,11 @@ class EligibilityListFilter(admin.SimpleListFilter):
             return queryset.eligible().with_pending_letters()
         return queryset.all()
 
+
 class PersonAdmin(ImportExportModelAdmin):
     resource_class = PersonResource
 
-    def last_served_date(self, obj) -> str | None:
+    def last_served_date(self, obj: Person) -> str | None:
         if obj.last_served:
             return obj.last_served.strftime("%Y-%m-%d")
 
@@ -205,13 +209,13 @@ class PersonAdmin(ImportExportModelAdmin):
         "last_name",
         "first_name",
         "get_eligibility_str",
+        "open_issues",
         "status",
         "last_served_date",
         "current_prison",
         "package_count",
         "pending_letter_count",
         "letter_count",
-        "created_by",
         "created_date",
         "modified_date",
     )
@@ -239,8 +243,7 @@ class PersonAdmin(ImportExportModelAdmin):
         "last_name",
     )
     list_per_page = 25
-    inlines = [PersonPrisonInline]
-
+    inlines = [PersonPrisonInline, PersonIssueInline]
 
     def get_form(self, request, obj=None, **kwargs):
         if not obj:
@@ -256,9 +259,7 @@ class PersonAdmin(ImportExportModelAdmin):
     def current_prison(self, person) -> str:
         if not person.current_prison:
             return NO_PRISON_STR
-        link = reverse(
-            "admin:app_prison_change", kwargs={"object_id": person.current_prison.id}
-        )
+        link = reverse("admin:app_prison_change", kwargs={"object_id": person.current_prison.id})
         return format_html("<a href={}>{}</a>", link, person.current_prison.name)
 
     def pending_letter_count(self, person):

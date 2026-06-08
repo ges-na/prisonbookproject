@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 
+from src.app.models.issue import PersonIssue
 from src.app.utils import WorkflowStage
 from src.auth.models import User
 
@@ -64,6 +65,7 @@ class Person(models.Model):
 
     prisons: QuerySet[PersonPrison]
     letter_set: QuerySet[Letter]
+    issue_set: QuerySet[PersonIssue]
     objects = PersonQuerySet.as_manager()
 
     class Meta:
@@ -81,10 +83,6 @@ class Person(models.Model):
     def current_prison(self) -> Prison | None:
         if person_prison := self.prisons.first():
             return person_prison.prison
-
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.middle_name if self.middle_name else ''} {self.last_name}{' ' + self.name_suffix if self.name_suffix else ''}"
 
     @cached_property
     def last_served(self):
@@ -138,6 +136,17 @@ class Person(models.Model):
         assert self.last_served
         cooldown_interval = make_aware((datetime.now() - timedelta(days=ELIGIBILITY_INTERVAL_DAYS)))
         return self.last_served <= cooldown_interval
+
+    @property
+    def open_issues(self):
+        if not (issue_count := self.issue_set.filter(resolved=False).count()):
+            return ""
+        return format_html(
+            "<a href={}?person={}&resolved=False>{}</a>",
+            reverse("admin:app_personissue_changelist"),
+            self.id,
+            issue_count,
+        )
 
     def get_eligibility_str(self, links: bool = True) -> str:
         pending_letters_string = None

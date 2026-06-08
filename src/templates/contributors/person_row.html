@@ -3,5 +3,5 @@
   <div class="field">{% include "contributors/person_name.html" with person=person %}</div>
   <div class="field">{{person.current_prison}}</div>
   <div class="field">{{person.created_date}}</div>
-  <div class="field"><a href="{% url 'contrib_problem_note_add' %}{% querystring person=person.id %}">Report problem</a></div>
+  <div class="field"><a href="{% url 'contrib_person_issue' %}{% querystring person=person.id %}">Report problem</a></div>
 </div>

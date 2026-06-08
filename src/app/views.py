@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from functools import wraps
-from typing import Callable
+from typing import Callable, Literal
 
 from django.conf import settings
 from django.contrib import messages
@@ -14,8 +16,9 @@ from django_registration.backends.activation.views import RegistrationView as Dj
 from src.app.forms import (
     AuthenticationForm,
     ContribLetterForm,
+    ContribLetterIssueForm,
     ContribPersonForm,
-    ContribProblemNoteForm,
+    ContribPersonIssueForm,
     PasswordResetForm,
     RegistrationForm,
 )
@@ -60,7 +63,7 @@ def contrib_logout(request):
 @check_auth
 def contrib_letter_form(request):
     if request.method == "POST":
-        form = ContribLetterForm(request.POST)
+        form = ContribLetterForm(request.user, data=request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Letter created.")
@@ -73,7 +76,7 @@ def contrib_letter_form(request):
 @check_auth
 def contrib_person_form(request):
     if request.method == "POST":
-        form = ContribPersonForm(request.POST)
+        form = ContribPersonForm(request.user, data=request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Person created.")
@@ -84,32 +87,55 @@ def contrib_person_form(request):
 
 
 @check_auth
-def contrib_add_problem_note_form(request):
+def contrib_letter_issue_form(request):
+    return contrib_issue_form_base(request, ContribLetterIssueForm, Letter, "letter")
+
+
+@check_auth
+def contrib_person_issue_form(request):
+    return contrib_issue_form_base(request, ContribPersonIssueForm, Person, "person")
+
+
+def contrib_issue_form_base(
+    request,
+    form_class: type[ContribPersonIssueForm] | type[ContribLetterIssueForm],
+    model: type[Letter] | type[Person],
+    form_type: Literal["person"] | Literal["letter"],
+):
+    record_id = request.GET.get(form_type)
+    initial = get_initial_issue_form_data(form_type, record_id, model)
     if request.method == "POST":
-        form = ContribProblemNoteForm(request.user, data=request.POST)
+        form = form_class(request.user, data=request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Note added.")
-        else:
-            messages.error(request, "Invalid note.")
-        return redirect("contrib_profile")
+            messages.success(request, "Issue added.")
+            return redirect("contrib_profile")
     else:
-        initial = {}
-        for note_type, model in {"letter": Letter, "person": Person}.items():
-            if record_id := request.GET.get(note_type):
-                record = model.objects.get(id=record_id)
-                if not record.created_by == request.user:
-                    messages.error(
-                        request,
-                        f"You do not have permission to add a note to this {note_type}.",
-                    )
-                initial[note_type] = record
-        form = ContribProblemNoteForm(request.user, initial=initial)
-        return render(
-            request,
-            "contributors/add_problem_note.html",
-            {"form": form},
-        )
+        record = model.objects.get(id=record_id)
+        if not record.created_by == request.user:
+            messages.error(
+                request,
+                f"You do not have permission to add an issue for this {form_type}.",
+            )
+            return redirect("contrib_profile")
+        form = form_class(request.user, initial=initial)
+    return render(
+        request,
+        "contributors/add_issue.html",
+        {"form_type": form_type, "form": form, "record_id": record_id},
+    )
+
+
+def get_initial_issue_form_data(form_type, record_id, model):
+    record = model.objects.get(id=record_id)
+    return {form_type: record}
+
+
+def get_blank_form_with_context(form_type, model, record_id, form_class, request):
+    initial = {}
+    record = model.objects.get(id=record_id)
+    initial[form_type] = record
+    return form_class(request.user, initial=initial)
 
 
 @check_auth

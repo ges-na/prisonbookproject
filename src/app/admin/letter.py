@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
+from src.app.admin.issue import LetterIssueInline
 from src.app.models.letter import Letter
 from src.app.models.person import WorkflowStage
 from src.app.models.prison import Prison
@@ -39,22 +40,14 @@ class LetterAdminForm(ModelForm):
         raise ValidationError("You must add a person to create or update a letter.")
 
 
-class LetterChangeForm(LetterAdminForm):
-    class Meta(LetterAdminForm.Meta):
-        fields = LetterAdminForm.Meta.fields + [
-            "fulfillment_events",
-            "returned_date",
-            "refulfilled_date",
-            "fulfillment_event_notes",
-        ]
-
-
 class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
+    form = LetterAdminForm
     list_display = (
         "letter_name",
         "workflow_stage",
         "postmark_date",
         "eligibility",
+        "open_issues",
         "person_current_prison",
         "restrictions",
         "stage1_complete_date",
@@ -66,7 +59,11 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
         "created_date",
         "modified_date",
     )
-    list_filter = ("workflow_stage", "prison_sent_to", "fulfilled_date")
+    list_filter = (
+        "workflow_stage",
+        "prison_sent_to",
+        "fulfilled_date",
+    )
     list_display_links = ("letter_name",)
     search_fields = (
         "person__last_name",
@@ -87,50 +84,40 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
         "notes",
     )
     actions = ("move_to_fulfilled", "move_to_stage1_complete", "move_to_discarded")
+    inlines = [LetterIssueInline]
 
     list_per_page = 25
 
-    def get_form(self, request, obj=None, **kwargs):
-        if not obj:
-            return LetterAdminForm
-        return LetterChangeForm
-
-    def get_fields(self, request, obj=None):
-        if obj:
-            return LetterChangeForm.Meta.fields
-        else:
-            return LetterAdminForm.Meta.fields
-
-    def eligibility(self, letter):
+    def eligibility(self, letter: Letter) -> str:
+        if not letter.person:
+            return ""
         return letter.person.get_eligibility_str()
 
-    def letter_name(self, letter):
+    def letter_name(self, letter: Letter) -> str:
         if not letter.person:
             return f"NO PERSON - {letter.postmark_date}"
         return f"{letter.person.inmate_number} | {letter.person.last_name}, {letter.person.first_name} - {letter.postmark_date}"
 
-    def person_list_display(self, letter: Letter):
+    def person_list_display(self, letter: Letter) -> str:
         if not letter.person:
-            # This is a problem, do something smarter here
-            return
+            return ""
         link = reverse("admin:app_person_change", kwargs={"object_id": letter.person.id})
         return format_html("<a href={}>{}</a>", link, letter.person.last_name)
 
     setattr(person_list_display, "admin_order_field", "person__last_name")
     setattr(person_list_display, "short_description", "Person")
 
-    def person_current_prison(self, letter) -> Prison | None:
+    def person_current_prison(self, letter: Letter) -> Prison | None:
         return letter.person.current_prison if letter.person else None
 
-    def restrictions(self, letter):
-        if not letter.person:
-            return ""
-        if letter.person.current_prison:
+    def restrictions(self, letter: Letter) -> str:
+        if letter.person and letter.person.current_prison:
             return letter.person.current_prison.restrictions
+        return ""
 
-    def prison_sent_to_list_display(self, letter):
+    def prison_sent_to_list_display(self, letter: Letter) -> str:
         if not letter.prison_sent_to:
-            return
+            return ""
         link = reverse("admin:app_prison_change", kwargs={"object_id": letter.prison_sent_to.id})
         return format_html("<a href={}>{}</a>", link, letter.prison_sent_to)
 

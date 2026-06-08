@@ -3,8 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.db.models.query import QuerySet
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.timezone import now
 
+from src.app.models.issue import LetterIssue
 from src.app.utils import WorkflowStage
 from src.auth.models import User
 
@@ -42,6 +46,19 @@ class Letter(models.Model):
     )
     notes = models.TextField(blank=True)
 
+    issue_set: QuerySet[LetterIssue]
+
+    @property
+    def open_issues(self):
+        if not (issue_count := self.issue_set.filter(resolved=False).count()):
+            return ""
+        return format_html(
+            "<a href={}?letter={}&resolved=False>{}</a>",
+            reverse("admin:app_letterissue_changelist"),
+            self.id,
+            issue_count,
+        )
+
     ##################
     # Record history #
     ##################
@@ -54,21 +71,6 @@ class Letter(models.Model):
         on_delete=models.SET_NULL,
     )
     modified_date = models.DateTimeField(auto_now=True)
-
-    #####################
-    # Returned/Refilled #
-    #####################
-
-    class FulfillmentEvents(models.TextChoices):
-        RETURNED = "returned", "Returned"
-        REFULFILLED = "refulfilled", "Refulfilled"
-
-    fulfillment_events = models.CharField(
-        max_length=200, choices=FulfillmentEvents.choices, blank=True
-    )
-    returned_date = models.DateTimeField(null=True, blank=True)
-    refulfilled_date = models.DateTimeField(null=True, blank=True)
-    fulfillment_event_notes = models.TextField(blank=True)
 
     def __str__(self):
         if not self.person:
