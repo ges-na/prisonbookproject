@@ -52,6 +52,7 @@ class IssueAdmin(admin.ModelAdmin):
     )
     list_display_links = ("issue",)
     list_filter = ("issue", "resolved")
+    actions = ("mark_issue_resolved",)
 
     def last_updated_date(self, issue: PersonIssue):
         return issue.modified_date if issue.modified_date else issue.created_date
@@ -68,6 +69,10 @@ class IssueAdmin(admin.ModelAdmin):
             obj.resolved_by = request.user
             obj.resolved_date = datetime.now()
         super().save_model(request, obj, form, change)
+
+    @admin.action(description="Mark issue resolved")
+    def mark_issue_resolved(self, request, queryset):
+        queryset.update(resolved=True)
 
 
 class PersonIssueAdmin(IssueAdmin):
