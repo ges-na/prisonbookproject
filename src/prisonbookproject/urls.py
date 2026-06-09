@@ -13,8 +13,8 @@ from src.app.views import (
 from src.viz.urls import urlpatterns
 
 urlpatterns = [
-    path(r"admin/", admin.site.urls),
-    path("", redirect_to_admin),
+    path(r"admin/", admin.site.urls, name="admin_base"),
+    path("", redirect_to_admin, name="admin_base_redirect"),
     path("viz/", include(urlpatterns)),
     path(r"ajax_select/", include(ajax_select_urls)),
     path(
@@ -30,7 +30,7 @@ urlpatterns = [
     path(
         "accounts/password_reset/",
         PasswordResetView.as_view(),
-        name="django_login",
+        name="django_password_reset",
     ),
     path("accounts/", include("django_registration.backends.activation.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
