@@ -189,7 +189,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
             inmate_number = letter.person.inmate_number
 
         headers = [
-            letter.person.get_name_str(),
+            letter.person.name_str,
             inmate_number,
             curr_prison.name,
         ]

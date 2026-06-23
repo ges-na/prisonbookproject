@@ -56,7 +56,7 @@ class PersonIssue(Issue):
     )
 
     def __str__(self):
-        return f"Person issue {self.created_date.date()}: {self.person.get_name_str()}"
+        return f"Person issue {self.created_date.date()}: {self.person.name_str}"
 
     def clean(self):
         if self.issue == self.IssueTypes.OTHER and not self.additional_note:

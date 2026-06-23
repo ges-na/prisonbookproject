@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from functools import cached_property
 from typing import TYPE_CHECKING
 
 from django.db import models
@@ -65,7 +64,7 @@ class Person(models.Model):
 
     prisons: QuerySet[PersonPrison]
     letter_set: QuerySet[Letter]
-    issue_set: QuerySet[PersonIssue]
+    personissue_set: QuerySet[PersonIssue]
     objects = PersonQuerySet.as_manager()
 
     class Meta:
@@ -84,7 +83,7 @@ class Person(models.Model):
         if person_prison := self.prisons.first():
             return person_prison.prison
 
-    @cached_property
+    @property
     def last_served(self):
         if fulfilled_letters := self.letter_set.filter(
             workflow_stage=WorkflowStage.FULFILLED,
@@ -99,14 +98,6 @@ class Person(models.Model):
         return bool(self.last_served)
 
     @property
-    def has_pending_letters(self):
-        return bool(self.pending_letter_count)
-
-    @property
-    def package_count(self):
-        return self.letter_set.filter(workflow_stage=WorkflowStage.FULFILLED).count()
-
-    @property
     def pending_letters(self):
         return self.letter_set.filter(
             workflow_stage__in=[
@@ -119,6 +110,14 @@ class Person(models.Model):
         return self.pending_letters.count()
 
     @property
+    def has_pending_letters(self):
+        return bool(self.pending_letter_count)
+
+    @property
+    def package_count(self):
+        return self.letter_set.filter(workflow_stage=WorkflowStage.FULFILLED).count()
+
+    @property
     def all_letters(self):
         return self.letter_set.all()
 
@@ -126,7 +125,8 @@ class Person(models.Model):
     def letter_count(self):
         return self.all_letters.count()
 
-    def get_name_str(self):
+    @property
+    def name_str(self):
         return f"{self.first_name} {self.middle_name + ' ' if self.middle_name else ''}{self.last_name}{' ' + self.name_suffix if self.name_suffix else ''}"
 
     @property
@@ -139,7 +139,7 @@ class Person(models.Model):
 
     @property
     def open_issues(self):
-        if not (issue_count := self.issue_set.filter(resolved=False).count()):
+        if not (issue_count := self.personissue_set.filter(resolved=False).count()):
             return ""
         return format_html(
             "<a href={}?person={}&resolved=False>{}</a>",

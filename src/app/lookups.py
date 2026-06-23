@@ -120,12 +120,12 @@ class LetterLookup(LookupChannel):
 
     def format_match(self, obj):
         return format_html(
-            "<span class='letter'>{} - {}</span>", obj.person.get_name_str(), obj.postmark_date
+            "<span class='letter'>{} - {}</span>", obj.person.name_str, obj.postmark_date
         )
 
     def format_item_display(self, obj: Letter):
         if not obj.person:
             raise Exception("TODO")
         return format_html(
-            "<span class='letter'>{} - {}</span>", obj.person.get_name_str(), obj.postmark_date
+            "<span class='letter'>{} - {}</span>", obj.person.name_str, obj.postmark_date
         )

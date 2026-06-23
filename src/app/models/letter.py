@@ -46,11 +46,11 @@ class Letter(models.Model):
     )
     notes = models.TextField(blank=True)
 
-    issue_set: QuerySet[LetterIssue]
+    letterissue_set: QuerySet[LetterIssue]
 
     @property
     def open_issues(self):
-        if not (issue_count := self.issue_set.filter(resolved=False).count()):
+        if not (issue_count := self.letterissue_set.filter(resolved=False).count()):
             return ""
         return format_html(
             "<a href={}?letter={}&resolved=False>{}</a>",
