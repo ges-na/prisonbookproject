@@ -51,7 +51,6 @@ class UserAdmin(DjangoUserAdmin):
 
     @admin.action(description="Change user's active status")
     def change_is_active_permission(self, request, queryset):
-        breakpoint()
         if "CustomAuth.change_is_active" not in request.user.get_all_permissions():
             messages.error(request, "You do not have permission to change active status")
             return

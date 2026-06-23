@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-23
+- Switched ProblemNote -> PersonIssue / LetterIssue
+    - Added issue choices for returned packages and wrong prison to appropriate issue types
+    - Resolve issue admin action
+    - Add issue from person/letter forms
+    - Add issue field to list views
+    - Contrib profile links to appropriate note types
+- Sanitize email to lowercase for registration, login, password change
+- Added first & last names to registration form
+- Rearranged admin
+- Added permissions to change active, contributor, and staff statuses
+    - Added admin actions to change user permissions
+- Started adding tests
+- Standardized permissions with decorator
+
 ## 2026-05-26
 - User/auth updates:
 	- Switched from default User model to custom User model
