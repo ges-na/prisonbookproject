@@ -9,9 +9,14 @@ jobs:
   backup-databases:
     name: Backup databases
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working_directory: ./backup
     steps:
+      - name: Check out the repository to the runner
+        uses: actions/checkout@v6
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Start machine
-        run: ./backup/trigger-backup.sh
+        run: ./trigger-backup.sh
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
