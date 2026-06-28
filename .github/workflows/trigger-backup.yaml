@@ -10,13 +10,8 @@ jobs:
     name: Backup databases
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: significa/fly-pg-dump-to-s3
-          path: ./fly-pg-dump-to-s3
-          ref: ${{ inputs.action-ref }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Start machine
-        run: flyctl machine run -a ppbb-db-backup-worker --region=iad --restart=no --rm ghcr.io/significa/fly-pg-dump-to-s3
+        run: ./trigger-backup.sh
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
