@@ -9,9 +9,12 @@ jobs:
   backup-databases:
     name: Backup databases
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working_directory: ./backup
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Start machine
-        run: ./prisonbookproject/trigger-backup.sh
+        run: ./trigger-backup.sh
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
