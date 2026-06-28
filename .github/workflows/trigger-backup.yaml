@@ -14,6 +14,6 @@ jobs:
         uses: actions/checkout@v6
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Start machine
-        run: flyctl machine run --app="ppbb-db-backup-worker" --region="iad" --restart=no --rm "ghcr.io/significa/fly-pg-dump-to-s3"
+        run: flyctl machine run -a ppbp-db-backup-worker
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
