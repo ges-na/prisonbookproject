@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - defaults:
-        run:
-          shell: bash
-          working-directory: ./backup
       - name: Start machine
         run: trigger-backup.sh
         env:
