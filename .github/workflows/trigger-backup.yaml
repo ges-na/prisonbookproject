@@ -13,7 +13,6 @@ jobs:
       fly-app: ppbp-db-backup-worker
       volume-size: 1
       machine-size: shared-cpu-1x
-      region: iad
-      docker-image: postgres:17-alpine
+      region: lhr
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
