@@ -18,6 +18,9 @@ kill_timeout = "5s"
   DJANGO_SETTINGS_MODULE = "src.prisonbookproject.settings_deployed"
   PORT = "8000"
 
+[[vm]]
+  memory = "512mb"
+
 [[services]]
   protocol = "tcp"
   internal_port = 8000
