@@ -11,7 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - defaults:
+        run:
+          shell: bash
+          working-directory: ./backup
       - name: Start machine
-        run: ./prisonbookproject/trigger-backup.sh
+        run: trigger-backup.sh
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
