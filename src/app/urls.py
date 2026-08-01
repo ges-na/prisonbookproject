@@ -1,6 +1,7 @@
 from django.urls import path
 
 from src.app.views import (
+    api_search,
     contrib_letter_form,
     contrib_letter_issue_form,
     contrib_logout,
@@ -20,4 +21,5 @@ urlpatterns = [
     path("contrib/logout/", contrib_logout, name="contrib_logout"),
     path("contrib/profile/", contrib_profile, name="contrib_profile"),
     path("contrib/not_contributor/", not_contributor, name="not_contributor"),
+    path("api_search/", api_search, name="api_search"),
 ]

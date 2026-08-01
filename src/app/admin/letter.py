@@ -29,16 +29,6 @@ class LetterAdminForm(ModelForm):
 
     person = make_ajax_field(Letter, "person", "person_channel")
 
-    def clean_person(self):
-        if person := self.cleaned_data.get("person"):
-            if person.current_prison:
-                return person
-            else:
-                raise ValidationError(
-                    f"Adding a person to a letter requires that person to have a current_prison. Please add current prison value to {person.inmate_number} {person.full_name} to create/update this letter."
-                )
-        raise ValidationError("You must add a person to create or update a letter.")
-
 
 class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
     form = LetterAdminForm
@@ -204,7 +194,21 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
         )
 
     def save_model(self, request, obj, form, change):
+        # TODO: tests
         if not obj.pk:
             obj.created_by = request.user
-        obj.modified_date = datetime.now()
+        else:
+            obj.modified_by = request.user
+            obj.modified_date = datetime.now()
+        # TODO
+        if person := self.cleaned_data.get("person"):
+            if not person.current_prison:
+                if (
+                    "status" in form.changed_data
+                    and form.changed_data["status"] != WorkflowStage.DISCARDED
+                ):
+                    # TODO: message?
+                    raise ValidationError(
+                        f"Cannot change status of letter {obj.id}; person {person.name_str} does not have a current prison."
+                    )
         super().save_model(request, obj, form, change)

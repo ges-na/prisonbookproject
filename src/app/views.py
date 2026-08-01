@@ -13,6 +13,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django_registration.backends.activation.views import RegistrationView as Dj_Reg
 
+from src.app.api_search import bop_request, cor_request, vinelink_request
 from src.app.forms import (
     AuthenticationForm,
     ContribLetterForm,
@@ -49,6 +50,7 @@ def redirect_to_admin(request):
     """
     Redirect base URL to admin site.
     """
+    del request
     return HttpResponseRedirect("/admin")
 
 
@@ -174,3 +176,32 @@ class LoginView(DjLoginView):
 
 class PasswordResetView(DjPasswordResetView):
     form_class = PasswordResetForm
+
+
+def api_search(request):
+    form = "admin/app/person/api_search.html"
+    if request.method == "GET":
+        return render(request, form)
+    elif request.method == "POST":
+        inmate_number = request.POST.get("inmate_number")
+        if not inmate_number:
+            return render(
+                request, form, {"results": [{"Error": "Inmate number required for search."}]}
+            )
+        if prison_type := request.POST.get("prison_type"):
+            match prison_type:
+                case "cor":
+                    results = cor_request(inmate_number)
+                case "bop":
+                    results = bop_request(inmate_number)
+                case "vine":
+                    results = vinelink_request(inmate_number)
+                case _:
+                    results = {}
+            return render(
+                request,
+                form,
+                {"results": results, "selected": prison_type},
+            )
+        else:
+            raise Exception("No prison_type found in request.")

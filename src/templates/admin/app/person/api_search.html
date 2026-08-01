@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+
+
+{% block content %}
+  <div>
+    <h1>Search for inmates</h1>
+    {% if results %}
+    <h2>Results</h2>
+    <div class="search_results">
+      {% for result in results %}
+        {% for key, value in result.items %}
+          <div>{{key}}: {{value}}</div>
+        {% endfor %}
+        {% if results|length > 1 %}-----{% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    <h2>Search BOP, COR, or VINELink</h2>
+    <form action="{% url 'api_search' %}" method="post" class="search_for_inmate">
+      {% csrf_token %}
+      <div class="search_input">
+        <div class="source">
+          <label for="prison_type">Source:</label>
+            <select name="prison_type" id="prison_type">
+              <option value="cor" {% if selected == 'cor' %} selected {% endif %}>State / COR</option>
+              <option value="bop" {% if selected == 'bop' %} selected {% endif %}>Federal / BOP</option>
+              <option value="vine" {% if selected == 'vine' %} selected {% endif %}>City/county / VINELink</option>
+            </select>
+        </div>
+        <div class="inmate_number">
+          <label for="inmate_number">Inmate number:</label>
+          <input type="text" name="inmate_number">
+        </div>
+        <input type="submit" value="Submit">
+      </div>
+    </form>
+  </div>
+{% endblock %}
