@@ -209,15 +209,15 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
         else:
             obj.modified_by = request.user
             obj.modified_date = datetime.now()
-        # TODO
-        if person := form.cleaned_data.get("person"):
-            if not person.current_prison:
-                if (
-                    "status" in form.changed_data
-                    and form.changed_data["status"] != WorkflowStage.DISCARDED
-                ):
-                    # TODO: message?
-                    raise ValidationError(
-                        f"Cannot change status of letter {obj.id}; person {person.name_str} does not have a current prison."
-                    )
+        # TODO: confirm functionality/edge cases
+        # if person := form.cleaned_data.get("person"):
+        #     if not person.current_prison:
+        #         if (
+        #             "status" in form.changed_data
+        #             and form.changed_data["status"] != WorkflowStage.DISCARDED
+        #         ):
+        #             # TODO: message?
+        #             raise ValidationError(
+        #                 f"Cannot change status of letter {obj.id}; person {person.name_str} does not have a current prison."
+        #             )
         super().save_model(request, obj, form, change)
