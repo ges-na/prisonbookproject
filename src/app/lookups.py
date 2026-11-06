@@ -54,7 +54,7 @@ class PersonLookup(LookupChannel):
         eligibility = format_html("<div>{}</div>", obj.get_eligibility_str())
         if obj.current_prison and obj.current_prison.restrictions:
             restrictions = format_html(
-                "<div>RESTRICTIONS: {}</div>", obj.current_prison.restrictions
+                "<div id='restrictions'>RESTRICTIONS: {}</div>", obj.current_prison.restrictions
             )
             return format_html(
                 "<div id='person_data'> {} {} {} </div>", body, restrictions, eligibility
@@ -100,7 +100,8 @@ class PersonLookupContrib(LookupChannel):
         eligibility = format_html("<div>{}</div>", obj.get_eligibility_str(links=False))
         if obj.current_prison and obj.current_prison.restrictions:
             restrictions = format_html(
-                "<div>RESTRICTIONS: {}</div>", obj.current_prison.restrictions
+                "<div id='restrictions'>RESTRICTIONS: {}</div>",
+                obj.current_prison.restrictions,
             )
             return format_html(
                 "<div id='person_data'> {} {} {} </div>", body, restrictions, eligibility

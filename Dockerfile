@@ -23,10 +23,10 @@ RUN poetry install
 
 COPY . /app/
 
-ENV DJANGO_SETTINGS_MODULE "src.prisonbookproject.settings_deployed"
-ENV ALLOWED_HOSTS "*","127.0.0.1:8000","localhost","0.0.0.0"
-ENV CSRF_TRUSTED_ORIGINS "https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev","http://127.0.0.1:8000","localhost"
-ENV CORS_WHITELIST "https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev","http://127.0.0.1:8000"
+ENV DJANGO_SETTINGS_MODULE="src.prisonbookproject.settings_deployed"
+ENV ALLOWED_HOSTS="*","127.0.0.1:8000","localhost","0.0.0.0"
+ENV CSRF_TRUSTED_ORIGINS="https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev","http://127.0.0.1:8000","localhost"
+ENV CORS_WHITELIST="https://prisonbookproject.fly.dev","https://ppbp-dev.fly.dev","http://127.0.0.1:8000"
 
 EXPOSE 8000
 
