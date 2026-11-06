@@ -201,7 +201,7 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
             obj.modified_by = request.user
             obj.modified_date = datetime.now()
         # TODO
-        if person := self.cleaned_data.get("person"):
+        if person := form.cleaned_data.get("person"):
             if not person.current_prison:
                 if (
                     "status" in form.changed_data

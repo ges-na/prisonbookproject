@@ -13,7 +13,7 @@ authors = [{name = "ges-na", email = "gesinaface@gmail.com"}]
 requires-python = ">=3.12,<4.0"
 dependencies = [
 "django-environ==0.13.0",
-"Django==5.2.12",
+"Django==6.1.3",
 "django-extensions==4.1",
 "django-import-export==2.8.0",
 "psycopg2-binary==2.9.11",

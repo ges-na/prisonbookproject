@@ -1,7 +1,6 @@
 .env
 *.pyc
 */__pycache__/*
-src/assets/admin/img/*
 src/static/*
 data/
 *.sql
