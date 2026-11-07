@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-07
+- Restrictions highlighted on Letter Add page
+- Logo/favicon work now
+- Python library upgrades to fix vulnerabilities
+
 ## 2026-06-23
 - Switched ProblemNote -> PersonIssue / LetterIssue
     - Added issue choices for returned packages and wrong prison to appropriate issue types
