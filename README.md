@@ -13,7 +13,7 @@ Updates tracked in [CHANGELOG.md](CHANGELOG.md).
 - Document per-letter issues.
 - Create a record for each unique writer.
 - Record per-prison restrictions.
-- Label of individuals as being in solitary or serving a life sentence.
+- Label individuals as being in solitary or serving a life sentence.
 - Create scheduled database backups.
 
 ### What you can't do with this tool*
