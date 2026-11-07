@@ -151,13 +151,17 @@ class Person(models.Model):
     def get_eligibility_str(self, links: bool = True) -> str:
         pending_letters_string = None
         if self.has_pending_letters:
+            if (letter_count := self.pending_letter_count) > 1:
+                pluralization_str = f"{letter_count} letters pending"
+            else:
+                pluralization_str = f"{letter_count} letter pending"
             if links:
                 pending_letters_string = format_html(
                     "<a href={}?person={}&workflow_stage__in={}>{}</a>",
                     reverse("admin:app_letter_changelist"),
                     self.id,
                     WorkflowStage.STAGE1_COMPLETE,
-                    f"{self.pending_letter_count} letters pending",
+                    pluralization_str,
                 )
             else:
                 pending_letters_string = f"{self.pending_letter_count} letters pending"

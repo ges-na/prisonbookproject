@@ -27,6 +27,8 @@ class AdminSite(DjAdminSite):
             for model in app["models"]:
                 if model["object_name"] == "User":
                     auth_models.append(model)
+                elif model["object_name"] == "PersonPrison":
+                    pass
                 elif model["object_name"] == "LetterIssue":
                     issue_models.append(model)
                 elif model["object_name"] == "PersonIssue":

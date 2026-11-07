@@ -20,10 +20,10 @@
     <h1>People Added</h1>
     <div class="contrib-container">
       <div class="person-row">
-        <div class="data-header">Inmate Number</div>
-        <div class="data-header">Name</div>
+        <div class="data-header">Person</div>
         <div class="data-header">Current Prison</div>
         <div class="data-header">Created Date</div>
+        <div class="data-header">Report problem</div>
       </div>
     {% for person in people %}
       {% include "contributors/person_row.html" with person=person %}

@@ -86,3 +86,14 @@ class PrisonAdmin(ImportExportModelAdmin):
         if not request.user.is_superuser and obj:
             return [*readonly, "name"]
         return readonly
+
+
+class PersonPrisonAdmin(ImportExportModelAdmin):
+    class Meta:
+        readonly_fields = ("person",)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = super().get_readonly_fields(request, obj)
+        if not request.user.is_superuser and obj:
+            return [*readonly, "person"]
+        return readonly

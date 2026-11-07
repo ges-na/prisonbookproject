@@ -6,7 +6,6 @@ from django.contrib.auth.forms import (
     AuthenticationForm as DjAuthenticationForm,
     PasswordResetForm as DjPasswordResetForm,
 )
-from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
 from django.views.decorators.debug import sensitive_variables
 from django_registration.forms import RegistrationForm as DjRegistrationForm
@@ -36,13 +35,16 @@ class ContribLetterForm(LetterAdminForm):
         widgets = {"notes": note_field}
 
     person = make_ajax_field(Letter, "person", "person_contrib_channel")
-    issue = forms.ChoiceField(
-        choices=[("", "-----"), *LetterIssue.IssueTypes.choices], required=False
-    )
+    issue = forms.BooleanField(initial=False, required=False)
 
     def __init__(self, user: User, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.user = user
+        if instance := kwargs.get("instance"):
+            if not self.user == instance.created_by:
+                raise Exception(
+                    f"User is not the creator of Letter record {instance.id}, cannot edit."
+                )
+        super().__init__(*args, **kwargs)
 
     def clean_notes(self):
         self.notes = self.cleaned_data.get("notes")
@@ -50,12 +52,13 @@ class ContribLetterForm(LetterAdminForm):
 
     def save(self, commit=True):
         letter = super().save()
-        letter.created_by = self.user
-        letter.save()
+        if not getattr(self, "instance"):
+            letter.created_by = self.user
+            letter.save()
         if issue := self.cleaned_data.get("issue"):
             issue = LetterIssue.objects.create(
                 letter=letter,
-                issue=issue,
+                issue="other",
                 additional_note=self.notes,
                 created_by=self.user,
                 created_date=datetime.now(),
@@ -73,7 +76,6 @@ class ContribPersonForm(PersonAdminForm):
             "middle_name",
             "name_suffix",
             "prison",
-            "issue",
             "notes",
         ]
         required_fields = ["inmate_number", "last_name", "first_name", "prison"]
@@ -92,13 +94,16 @@ class ContribPersonForm(PersonAdminForm):
         }
 
     prison = forms.ModelChoiceField(queryset=Prison.objects.all().order_by("name"))
-    issue = forms.ChoiceField(
-        choices=[("", "-----"), *PersonIssue.IssueTypes.choices], required=False
-    )
+    issue = forms.BooleanField(initial=False, required=False)
 
     def __init__(self, user: User, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.user = user
+        if instance := kwargs.get("instance"):
+            if not self.user == instance.created_by:
+                raise Exception(
+                    f"User is not the creator of Person record {instance.id}, cannot edit."
+                )
+        super().__init__(*args, **kwargs)
 
     def clean_notes(self):
         self.notes = self.cleaned_data.get("notes")
@@ -106,8 +111,9 @@ class ContribPersonForm(PersonAdminForm):
 
     def save(self, commit=True):
         person = super().save()
-        person.created_by = self.user
-        person.save()
+        if not getattr(self, "instance"):
+            person.created_by = self.user
+            person.save()
         data = self.cleaned_data
         person_prison = PersonPrison(
             person=person, prison=data["prison"], created_date=datetime.now(), created_by=self.user
@@ -116,7 +122,6 @@ class ContribPersonForm(PersonAdminForm):
         if issue := self.cleaned_data.get("issue"):
             issue = PersonIssue.objects.create(
                 person=person,
-                issue=issue,
                 additional_note=self.notes,
                 created_by=self.user,
                 created_date=datetime.now(),
@@ -124,13 +129,22 @@ class ContribPersonForm(PersonAdminForm):
             issue.save()
 
 
+class ContribPersonPrisonChangeForm(ModelForm):
+    class Meta:
+        model = PersonPrison
+        prison = forms.ModelChoiceField(queryset=Prison.objects.all().order_by("name"))
+        fields = ["prison"]
+        required_fields = ["prison"]
+        widgets = {"person_id": forms.HiddenInput()}
+
+
 class ContribIssueForm(ModelForm):
     issue_type = ""
 
     class Meta:
         abstract = True
-        fields = ["issue", "additional_note"]
-        required_fields = ["issue"]
+        fields = ["additional_note"]
+        required_fields = ["additional_note"]
         widgets = {
             "additional_note": forms.Textarea(
                 attrs={
@@ -148,9 +162,7 @@ class ContribIssueForm(ModelForm):
     def clean_issue_type(self):
         if issue_target := self.cleaned_data.get(self.issue_type):
             if not issue_target.created_by == self.user:
-                raise ValidationError(
-                    f"User is not the creator of this {self.issue_type}, cannot add note."
-                )
+                raise Exception(f"User is not the creator of this {self.issue_type}, cannot edit.")
         return issue_target
 
     def save(self, commit=True):

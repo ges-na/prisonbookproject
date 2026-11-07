@@ -1,5 +1,5 @@
 <div class="letter-row">
-  <div class="field">{% include "contributors/person_name.html" with person=letter.person %}</div>
+  <div class="field">{% include "contributors/person_name.html" with person=letter.person %}<br><a href="{% url 'contrib_letter_change' %}{% querystring existing_id=letter.id %}">Update letter</a><br><a href="{% url 'contrib_personprison_change' %}{% querystring person_id=letter.person.id %}">Update prison</a></div>
   <div class="field">{{letter.postmark_date}}</div>
   <div class="field">{{letter.created_date}}</div>
   <div class="field"><a href="{% url 'contrib_letter_issue' %}{% querystring letter=letter.id %}">Report problem</a></div>

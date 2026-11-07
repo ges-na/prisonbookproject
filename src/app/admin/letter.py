@@ -149,9 +149,11 @@ class LetterAdmin(ImportExportModelAdmin, AjaxSelectAdmin):  # type: ignore
                 continue
             else:
                 change.append(letter.id)
+                # TODO: this is only set if workflow advanced via admin action
                 letter.prison_sent_to = letter.person.current_prison
                 letter.save()
         # TODO: make things tz aware
+        # TODO: fulfilled_date is only set if workflow advanced via admin action
         queryset.filter(id__in=change).update(
             fulfilled_date=datetime.now(), workflow_stage=WorkflowStage.FULFILLED
         )

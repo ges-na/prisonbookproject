@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class PersonIssueAdminForm(ModelForm):
     class Meta:
         model = PersonIssue
-        fields = ("person", "issue", "additional_note", "resolved", "resolved_note")
+        fields = ("person", "additional_note", "resolved", "resolved_note")
 
     person = make_ajax_field(PersonIssue, "person", "person_channel")
 
@@ -24,7 +24,7 @@ class PersonIssueAdminForm(ModelForm):
 class LetterIssueAdminForm(ModelForm):
     class Meta:
         model = LetterIssue
-        fields = ("letter", "issue", "additional_note", "resolved", "resolved_note")
+        fields = ("letter", "issue", "return_type", "additional_note", "resolved", "resolved_note")
 
     letter = make_ajax_field(LetterIssue, "letter", "letter_channel")
 
@@ -33,25 +33,12 @@ class IssueAdmin(admin.ModelAdmin):
     class Meta:
         abstract = True
 
-    base_list_display = (
-        "resolved",
-        "issue",
-        "additional_note",
-        "resolved_note",
-        "resolved_by",
-        "resolved_date",
-        "last_updated_by",
-        "last_updated_date",
-        "created_date",
-        "created_by",
-    )
-
     ordering = (
         "resolved",
         "-modified_date",
     )
-    list_display_links = ("issue",)
-    list_filter = ("issue", "resolved")
+    list_display_links = ("resolved", "additional_note")
+    list_filter = ("resolved",)
     actions = ("mark_issue_resolved",)
 
     def last_updated_date(self, issue: PersonIssue):
@@ -77,7 +64,20 @@ class IssueAdmin(admin.ModelAdmin):
 
 class PersonIssueAdmin(IssueAdmin):
     form = PersonIssueAdminForm
-    list_display = ["person_list_display", *IssueAdmin.base_list_display]
+
+    list_display = (
+        "resolved",
+        "additional_note",
+        "person_list_display",
+        "resolved_note",
+        "resolved_by",
+        "resolved_date",
+        "last_updated_by",
+        "last_updated_date",
+        "created_date",
+        "created_by",
+    )
+
     search_fields = (
         "person__last_name",
         "person__first_name",
@@ -94,7 +94,26 @@ class PersonIssueAdmin(IssueAdmin):
 
 class LetterIssueAdmin(IssueAdmin):
     form = LetterIssueAdminForm
-    list_display = ["letter_list_display", *IssueAdmin.base_list_display]
+
+    list_display = (
+        "resolved",
+        "issue",
+        "return_type",
+        "letter_list_display",
+        "additional_note",
+        "resolved_note",
+        "resolved_by",
+        "resolved_date",
+        "last_updated_by",
+        "last_updated_date",
+        "created_date",
+        "created_by",
+    )
+    list_display_links = ("resolved", "issue", "additional_note")
+    list_filter = (
+        "return_type",
+        "resolved",
+    )
     search_fields = (
         "letter__id",
         "letter__person__first_name",
@@ -108,6 +127,25 @@ class LetterIssueAdmin(IssueAdmin):
         return format_html("<a href={}>{}</a>", link, issue.letter.__str__())
 
     setattr(letter_list_display, "short_description", "Letter")
+
+    def save_model(self, request, obj, form, change):
+        """
+        Capture original fulfillment info (date and prison) in
+        LetterIssue.orig_fulfilled_date and LetterIssue.orig_prison_sent_to
+        if issue type is RETURNED_PACKAGE.
+        """
+        issue_type = form.cleaned_data.get("issue")
+        if issue_type == LetterIssue.IssueTypes.RETURNED_PACKAGE:
+            if change:
+                if obj.orig_fulfilled_date and obj.orig_prison_sent_to:
+                    super().save_model(request, obj, form, change)
+            letter = form.cleaned_data.get("letter")
+            if not obj.orig_fulfilled_date:
+                obj.orig_fulfilled_date = letter.fulfilled_date
+            if not obj.orig_prison_sent_to:
+                obj.orig_prison_sent_to = letter.prison_sent_to
+            obj.save()
+        super().save_model(request, obj, form, change)
 
 
 class IssueInline(admin.TabularInline):
@@ -125,11 +163,6 @@ class IssueInline(admin.TabularInline):
 
 class PersonIssueInline(IssueInline):
     model = PersonIssue
-
-    def formfield_for_choice_field(self, db_field, request, **kwargs):
-        if db_field.name == "issue":
-            kwargs["choices"] = [("", "-----"), *PersonIssue.IssueTypes.choices]
-        return super().formfield_for_choice_field(db_field, request, **kwargs)
 
 
 class LetterIssueInline(IssueInline):

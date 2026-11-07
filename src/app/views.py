@@ -19,11 +19,13 @@ from src.app.forms import (
     ContribLetterIssueForm,
     ContribPersonForm,
     ContribPersonIssueForm,
+    ContribPersonPrisonChangeForm,
     PasswordResetForm,
     RegistrationForm,
 )
 from src.app.models.letter import Letter
 from src.app.models.person import Person
+from src.app.models.prison import PersonPrison
 
 
 def check_auth(func: Callable) -> Callable:
@@ -61,7 +63,7 @@ def contrib_logout(request):
 
 
 @check_auth
-def contrib_letter_form(request):
+def contrib_letter_form_add(request):
     if request.method == "POST":
         form = ContribLetterForm(request.user, data=request.POST)
         if form.is_valid():
@@ -74,7 +76,35 @@ def contrib_letter_form(request):
 
 
 @check_auth
-def contrib_person_form(request):
+def contrib_letter_form_change(request):
+    existing_id = request.GET.get("existing_id")
+    instance = Letter.objects.get(id=existing_id) if existing_id else None
+    initial = {"person": instance.person.id, "id": existing_id} if instance else {}
+    if request.method == "POST":
+        try:
+            form = ContribLetterForm(request.user, instance=instance, data=request.POST)
+        except Exception as e:
+            messages.error(request, str(e))
+            return redirect("contrib_profile")
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Letter updated.")
+            return redirect("contrib_profile")
+    else:
+        try:
+            form = ContribLetterForm(request.user, initial=initial, instance=instance)
+        except Exception as e:
+            messages.error(request, str(e))
+            return redirect("contrib_profile")
+    return render(
+        request,
+        "contributors/change_letter.html",
+        {"form": form, "existing_id": existing_id},
+    )
+
+
+@check_auth
+def contrib_person_form_add(request):
     if request.method == "POST":
         form = ContribPersonForm(request.user, data=request.POST)
         if form.is_valid():
@@ -84,6 +114,35 @@ def contrib_person_form(request):
     else:
         form = ContribPersonForm(request.user)
     return render(request, "contributors/add_person.html", {"form": form})
+
+
+@check_auth
+def contrib_person_form_change(request):
+    existing_id = request.GET.get("existing_id")
+    instance = Person.objects.get(id=existing_id) if existing_id else None
+    initial = {"prison": instance.current_prison, "id": existing_id} if instance else {}
+    if request.method == "POST":
+        try:
+            form = ContribPersonForm(request.user, instance=instance, data=request.POST)
+        except Exception as e:
+            messages.error(request, str(e))
+            return redirect("contrib_profile")
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Person updated.")
+            return redirect("contrib_profile")
+    try:
+        form = ContribPersonForm(
+            request.user,
+            initial=initial,
+            instance=instance,
+        )
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect("contrib_profile")
+    return render(
+        request, "contributors/change_person.html", {"form": form, "existing_id": existing_id}
+    )
 
 
 @check_auth
@@ -126,16 +185,32 @@ def contrib_issue_form_base(
     )
 
 
+def contrib_person_prison_change_form(request):
+    person_id = request.GET.get("person_id")
+    person = Person.objects.get(id=person_id)
+    if not person:
+        # TODO
+        raise
+    if not (current_prison := person.prisons.first()):
+        # TODO
+        raise
+    record = PersonPrison.objects.get(id=current_prison.id)
+    if request.method == "POST":
+        form = ContribPersonPrisonChangeForm(request.POST, instance=record)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Prison updated for {person.name_str}.")
+            return redirect("contrib_profile")
+    return render(
+        request,
+        "contributors/change_person_prison.html",
+        {"form": ContribPersonPrisonChangeForm(instance=record), "person": person},
+    )
+
+
 def get_initial_issue_form_data(form_type, record_id, model):
     record = model.objects.get(id=record_id)
     return {form_type: record}
-
-
-def get_blank_form_with_context(form_type, model, record_id, form_class, request):
-    initial = {}
-    record = model.objects.get(id=record_id)
-    initial[form_type] = record
-    return form_class(request.user, initial=initial)
 
 
 @check_auth

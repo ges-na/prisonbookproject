@@ -1,0 +1,16 @@
+{% extends "contributors/contrib_base.html" %}
+
+{% block extra_header %}
+{{ form.media }}
+{% endblock %}
+
+{% block content %}
+
+<h1>Update Prison for {{ person.name_str }}</h1>
+<form action={% url 'contrib_personprison_change' %}{% querystring person_id=person.id %} method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit">
+</form>
+
+{% endblock %}
