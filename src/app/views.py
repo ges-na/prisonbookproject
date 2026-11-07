@@ -25,7 +25,6 @@ from src.app.forms import (
 )
 from src.app.models.letter import Letter
 from src.app.models.person import Person
-from src.app.models.prison import PersonPrison
 
 
 def check_auth(func: Callable) -> Callable:
@@ -51,6 +50,7 @@ def redirect_to_admin(request):
     """
     Redirect base URL to admin site.
     """
+    del request
     return HttpResponseRedirect("/admin")
 
 
@@ -79,7 +79,9 @@ def contrib_letter_form_add(request):
 def contrib_letter_form_change(request):
     existing_id = request.GET.get("existing_id")
     instance = Letter.objects.get(id=existing_id) if existing_id else None
-    initial = {"person": instance.person.id, "id": existing_id} if instance else {}
+    initial = (
+        {"person": instance.person.id, "id": existing_id} if instance and instance.person else {}
+    )
     if request.method == "POST":
         try:
             form = ContribLetterForm(request.user, instance=instance, data=request.POST)
@@ -189,12 +191,9 @@ def contrib_person_prison_change_form(request):
     person_id = request.GET.get("person_id")
     person = Person.objects.get(id=person_id)
     if not person:
-        # TODO
-        raise
-    if not (current_prison := person.prisons.first()):
-        # TODO
-        raise
-    record = PersonPrison.objects.get(id=current_prison.id)
+        messages.error(request, "No person to change.")
+        return redirect("contrib_profile")
+    record = person.prisons.first()
     if request.method == "POST":
         form = ContribPersonPrisonChangeForm(request.POST, instance=record)
         if form.is_valid():
